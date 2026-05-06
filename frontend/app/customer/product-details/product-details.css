@@ -1,0 +1,35 @@
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.main-image {
+  height: 450px;
+}
+
+.main-img {
+  max-height: 80%;
+  object-fit: contain;
+}
+
+.thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.thumb.active {
+  border-color: #000;
+  background: #f8f9fa;
+}
+
+.color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+}

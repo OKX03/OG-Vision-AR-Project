@@ -1,0 +1,90 @@
+.dashboard-container {
+  padding: 60px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 40px;
+  text-align: left;
+}
+
+.management-section {
+  background-color: #f1f5f9;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 50px 40px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 25px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+}
+
+/* Card Icon */
+.card-icon .icon-bg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: white;
+}
+
+/* Card Themes */
+.dashboard-card.product .icon-bg { background-color: #22d3ee; } /* 青色 */
+.dashboard-card.vto .icon-bg { background-color: #3b82f6; }    /* 蓝色 */
+.dashboard-card.faq .icon-bg { background-color: #f97316; }    /* 橙色 */
+
+.card-text h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.card-text p {
+  margin: 12px 0 0 0;
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

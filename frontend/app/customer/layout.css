@@ -1,0 +1,36 @@
+html, body, #__next {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.user-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.user-layout .content {
+  flex: 1;
+}
+
+.navbar-brand {
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.nav-link {
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  color: #0d6efd;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.navbar-collapse {
+  flex-basis: 100%;
+}
