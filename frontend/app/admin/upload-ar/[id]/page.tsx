@@ -123,7 +123,7 @@ export default function UploadArPage() {
   useEffect(() => {
     initThree();
     if (id) {
-      VtoService.getModel(id as string).then((model) => {
+      VtoService.getModelByProductId(id as string).then((model) => {
         if (model?.file_path) {
           setProductModel(model);
           loadModel(`${process.env.NEXT_PUBLIC_API_BASE_URL}${model.file_path}`);
@@ -162,7 +162,7 @@ export default function UploadArPage() {
     setShowConfirmUpload(false);
     setIsUploading(true);
     try {
-      await VtoService.upload(id as string, selectedFile);
+      await VtoService.uploadModel(id as string, selectedFile);
       setSuccessMessage("AR Model Uploaded Successfully!");
       setShowSuccess(true);
     } catch (err) {
@@ -180,7 +180,7 @@ export default function UploadArPage() {
   const confirmDelete = async () => {
     setShowConfirmDelete(false);
     try {
-      await VtoService.delete(id as string);
+      await VtoService.deleteModel(id as string);
       setSuccessMessage("AR Model Deleted Successfully!");
       setShowSuccess(true);
     } catch (err) {
@@ -196,7 +196,7 @@ export default function UploadArPage() {
       setShowSuccess(true);
       setShowArCalibration(false);
       // Reload the model data
-      VtoService.getModel(id as string).then(setProductModel);
+      VtoService.getModelByProductId(id as string).then(setProductModel);
     } catch (err) {
       console.error(err);
       alert("Failed to save calibration.");

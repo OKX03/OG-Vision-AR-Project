@@ -26,7 +26,6 @@
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1);
-  /* Native camera mirror effect */
 }
 
 .vto-canvas {
@@ -35,7 +34,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Don't flip canvas in CSS! We flip mathematically so 3D objects aren't inside-out */
 }
 
 .vto-canvas {

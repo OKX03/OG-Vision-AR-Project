@@ -39,7 +39,7 @@ const VirtualTryOn: React.FC<Props> = ({ modelPath, isAdminMode = false, initial
   let cameraAlertTriggered = false;
 
   const occluderRef = useRef<THREE.Mesh | null>(null);
-  const headBulkRef = useRef<THREE.Group | null>(null);
+  const headBulkRef = useRef<THREE.Mesh | null>(null);
   const rafRef = useRef<number | null>(null);
 
   const smoothPos = useRef(new THREE.Vector3());
@@ -79,11 +79,57 @@ const VirtualTryOn: React.FC<Props> = ({ modelPath, isAdminMode = false, initial
 
     return () => {
       mountedRef.current = false;
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       }
-      rendererRef.current?.dispose();
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      
+      if (sceneRef.current) {
+        sceneRef.current.traverse((obj: any) => {
+          if (obj.geometry) {
+            obj.geometry.dispose();
+          }
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach((mat: any) => mat.dispose());
+            } else {
+              obj.material.dispose();
+            }
+          }
+        });
+        sceneRef.current.clear();
+      }
+      
+      if (sceneRef.current?.environment) {
+        sceneRef.current.environment.dispose();
+      }
+      
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+        rendererRef.current.forceContextLoss();
+        rendererRef.current = null;
+      }
+      
+      sceneRef.current = null;
+      cameraRef.current = null;
+      occluderRef.current = null;
+      headBulkRef.current = null;
+      glassesRef.current = null;
+      smoothedLm.current = [];
+      
+      if (faceSvcRef.current) {
+        faceSvcRef.current.close();
+      }
     };
   }, []);
 
@@ -159,6 +205,7 @@ const VirtualTryOn: React.FC<Props> = ({ modelPath, isAdminMode = false, initial
         }
       }
     } catch (err: any) {
+      console.error("Camera error:", err);
       if (!cameraAlertTriggered) {
         cameraAlertTriggered = true;
         alert(`Camera Access Failed: ${err.message}\n\n`);
@@ -176,18 +223,23 @@ const VirtualTryOn: React.FC<Props> = ({ modelPath, isAdminMode = false, initial
     const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 10);
     camera.position.z = 2;
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const pixelRatio = isMobile ? Math.min(window.devicePixelRatio, 1.5) : Math.min(window.devicePixelRatio, 2);
+
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       alpha: true,
-      antialias: true,
+      antialias: !isMobile, 
+      powerPreference: "low-power", 
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(pixelRatio);
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     // @ts-ignore
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmremGenerator.dispose();
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
@@ -201,10 +253,11 @@ const VirtualTryOn: React.FC<Props> = ({ modelPath, isAdminMode = false, initial
     rendererRef.current = renderer;
   };
 
-const createFaceOccluder = () => {
+  const createFaceOccluder = () => {
     if (!sceneRef.current) return;
 
     const geometry = new THREE.BufferGeometry();
+
     const positions = new Float32Array(478 * 3);
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
@@ -214,28 +267,35 @@ const createFaceOccluder = () => {
 
     const material = new THREE.MeshBasicMaterial({
       color: 0x00ff00,
-      colorWrite: false,
-      depthWrite: true, 
+      colorWrite: false, 
+      depthWrite: true,
       wireframe: false,
       side: THREE.DoubleSide
     });
 
-    const frontMask = new THREE.Mesh(geometry, material);
-    frontMask.renderOrder = -1; 
-    sceneRef.current.add(frontMask);
-    occluderRef.current = frontMask;
+    const headBulkGeometry = new THREE.SphereGeometry(1.0, 32, 32);
+    headBulkGeometry.scale(0.85, 1.2, 0.8);
+    const headBulkMesh = new THREE.Mesh(headBulkGeometry, material);
+    headBulkMesh.renderOrder = -1;
+    sceneRef.current.add(headBulkMesh);
+    headBulkRef.current = headBulkMesh;
 
-    const headGroup = new THREE.Group();
-    sceneRef.current.add(headGroup);
-    headBulkRef.current = headGroup;
+    const neckBulkGeometry = new THREE.CylinderGeometry(0.65, 0.65, 3, 32);
+    const neckBulkMesh = new THREE.Mesh(neckBulkGeometry, material);
+    neckBulkMesh.renderOrder = -1;
 
-    const headGeo = new THREE.SphereGeometry(1.0, 32, 32);
+    headBulkMesh.add(neckBulkMesh);
+    neckBulkMesh.position.set(0, -1.5, 0); 
 
-    headGeo.scale(0.65, 1.1, 0.8); 
-    const headMesh = new THREE.Mesh(headGeo, material);
-    headMesh.renderOrder = -1;
-    headGroup.add(headMesh);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.renderOrder = -1; 
 
+
+    mesh.position.set(0, 0, 0);
+    mesh.scale.set(1, 1, 1);
+
+    sceneRef.current.add(mesh);
+    occluderRef.current = mesh;
   };
 
   const replaceModel = async (url: string) => {
@@ -244,9 +304,18 @@ const createFaceOccluder = () => {
     if (glassesRef.current) {
       sceneRef.current.remove(glassesRef.current);
       glassesRef.current.traverse((child: any) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) child.material.dispose();
+        if (child.geometry) {
+          child.geometry.dispose();
+        }
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((mat: any) => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
       });
+      glassesRef.current = null;
     }
 
     let obj: THREE.Object3D;
@@ -269,6 +338,13 @@ const createFaceOccluder = () => {
     obj.userData.baseWidth = size.x;
     obj.scale.setScalar(0.01);
 
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    obj.position.x = -center.x; 
+    obj.position.y = -center.y + (size.y * 0.1); 
+    // 💡 眼镜的本地坐标系复原。
+    obj.position.z = -box.max.z + (size.z * 0.2); 
+
     obj.traverse((child: any) => {
       if (child.isMesh) {
         const matName = child.material?.name?.toLowerCase() || "";
@@ -281,12 +357,14 @@ const createFaceOccluder = () => {
             thickness: 0.01,
             transparent: true,
             opacity: 1,
+            depthWrite: true,
           });
         } else {
           child.material.metalness = Math.max(child.material.metalness || 0, 0.6);
           child.material.roughness = Math.min(child.material.roughness || 1, 0.3);
           child.material.envMapIntensity = 1.0;
           child.material.needsUpdate = true;
+          child.material.depthWrite = true;
         }
       }
     });
@@ -369,7 +447,7 @@ const createFaceOccluder = () => {
     } else {
       const factor = 0.65;
       for (let i = 0; i < lm.length; i++) {
-        const targetX = staticImageSrc ? lm[i].x : (1.0 - lm[i].x);
+        const targetX = staticImageSrc ? lm[i].x : (1.0 - lm[i].x); 
         smoothedLm.current[i].x += (targetX - smoothedLm.current[i].x) * factor;
         smoothedLm.current[i].y += (lm[i].y - smoothedLm.current[i].y) * factor;
         smoothedLm.current[i].z += (lm[i].z - smoothedLm.current[i].z) * factor;
@@ -398,7 +476,7 @@ const createFaceOccluder = () => {
         const ndc = new THREE.Vector3(ndcX, ndcY, 0.5);
         ndc.unproject(cameraRef.current);
         const dir = ndc.sub(cameraRef.current.position).normalize();
-      
+
         const depthOffset = p.z * scaleZ * screenWidthAtDist;
         const finalPos = cameraRef.current.position.clone().add(dir.multiplyScalar(distance + depthOffset));
 
@@ -414,16 +492,15 @@ const createFaceOccluder = () => {
 
     const pLeft = new THREE.Vector3().fromArray(positions, 33 * 3);
     const pRight = new THREE.Vector3().fromArray(positions, 263 * 3);
-    const pForehead = new THREE.Vector3().fromArray(positions, 10 * 3); 
+    const pNose = new THREE.Vector3().fromArray(positions, 1 * 3);
     const pChin = new THREE.Vector3().fromArray(positions, 152 * 3);
     const pBridge = new THREE.Vector3().fromArray(positions, 168 * 3);
 
     let xAxis = pLeft.clone().sub(pRight).normalize(); 
     if (staticImageSrc) {
-       xAxis.negate();
+       xAxis.negate(); 
     }
-
-    const yTemp = pForehead.clone().sub(pChin).normalize(); 
+    const yTemp = pNose.clone().sub(pChin).normalize();
     const zAxis = new THREE.Vector3().crossVectors(xAxis, yTemp).normalize(); 
     const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();  
 
@@ -431,6 +508,10 @@ const createFaceOccluder = () => {
     const targetQuat = new THREE.Quaternion().setFromRotationMatrix(faceMatrix);
 
     const physicalWidth = pLeft.distanceTo(pRight);
+
+    if (occluderRef.current) {
+        occluderRef.current.position.set(0, 0, 0);
+    }
 
     const currentCalib = calibRef.current;
 
@@ -447,14 +528,13 @@ const createFaceOccluder = () => {
       .add(yAxis.clone().multiplyScalar(currentCalib.yOffset * physicalWidth * 10))
       .add(zAxis.clone().multiplyScalar(currentCalib.zOffset * physicalWidth * 10));
 
+    const bulkPos = pBridge.clone().add(zAxis.clone().multiplyScalar(-physicalWidth * 1.1));
+    bulkPos.add(yAxis.clone().multiplyScalar(-physicalWidth * 0.3));
+
     if (headBulkRef.current) {
-      const bulkCenter = pBridge.clone().add(zAxis.clone().multiplyScalar(-physicalWidth * 1.8));
-      bulkCenter.add(yAxis.clone().multiplyScalar(-physicalWidth * 0.2));
-
-      headBulkRef.current.position.copy(bulkCenter);
+      headBulkRef.current.position.copy(bulkPos);
       headBulkRef.current.quaternion.copy(targetQuat); 
-
-      headBulkRef.current.scale.setScalar(physicalWidth * 1.05); 
+      headBulkRef.current.scale.setScalar(physicalWidth * 1.1);
     }
 
     const baseWidth = glassesRef.current?.userData?.baseWidth || 1;
@@ -497,7 +577,7 @@ const createFaceOccluder = () => {
       overflowY: 'auto',
       borderRight: '1px solid #333'
     }}>
-      <div style={{ fontWeight: 'bold', fontSize: '15px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>👓 Glasses Calibrator</div>
+      <div style={{ fontWeight: 'bold', fontSize: '15px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>⚒ Admin Calibrator</div>
 
       {['pitch', 'yaw', 'roll'].map((axis) => (
         <div key={axis} style={{ display: 'flex', flexDirection: 'column' }}>
@@ -505,7 +585,7 @@ const createFaceOccluder = () => {
             <span>{axis.toUpperCase()}</span>
             <span>{calib[axis as keyof typeof calib]}°</span>
           </div>
-          <input type="range" min="-180" max="180" step="5"
+          <input type="range" min="-180" max="180" step="1"
             value={calib[axis as keyof typeof calib]}
             onChange={(e) => setCalib({ ...calib, [axis]: parseFloat(e.target.value) })}
             style={{ width: '100%' }}
@@ -518,7 +598,7 @@ const createFaceOccluder = () => {
           <span>SCALE</span>
           <span>{calib.scale}x</span>
         </div>
-        <input type="range" min="0.1" max="3" step="0.1" value={calib.scale}
+        <input type="range" min="0.1" max="3" step="0.01" value={calib.scale}
           onChange={(e) => setCalib({ ...calib, scale: parseFloat(e.target.value) })}
           style={{ width: '100%' }}
         />

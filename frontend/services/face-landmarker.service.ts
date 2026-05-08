@@ -94,4 +94,19 @@ export class FaceLandmarkerService {
       return null;
     }
   }
+
+  close() {
+    if (this.faceLandmarker) {
+      this.faceLandmarker.close();
+      this.faceLandmarker = undefined;
+    }
+    this.ready = false;
+    this.initPromise = null;
+    this.lastVideoTime = -1;
+    this.latestLandmarks = [];
+  
+    if (typeof global !== 'undefined' && global.gc) {
+      global.gc();
+    }
+  }
 }

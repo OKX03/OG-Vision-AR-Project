@@ -9,13 +9,6 @@ type Props = {
 };
 
 export default function VirtualTryOnCanvas({ modelPath, initialCalibration, staticImageSrc }: Props) {
-  if (!modelPath) {
-    return (
-      <div className="no-model">
-        <p>Select a frame to try on</p>
-      </div>
-    );
-  }
 
-  return <VirtualTryOn modelPath={modelPath} initialCalibration={initialCalibration} staticImageSrc={staticImageSrc} />;
+  return <VirtualTryOn modelPath={modelPath || ""} initialCalibration={initialCalibration} staticImageSrc={staticImageSrc} />;
 }
