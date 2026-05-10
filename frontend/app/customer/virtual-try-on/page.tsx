@@ -501,6 +501,7 @@ export default function VirtualTryOnApp() {
     } else {
       setErrorMessage("No face detected. Please use a clear front-facing photo.");
       setShowErrorModal(true);
+      setUploadedPhoto(null);
       if (faceServiceRef.current) faceServiceRef.current.close();
       setIsProcessing(false);
     }
@@ -742,11 +743,11 @@ export default function VirtualTryOnApp() {
         )}
       </div>
 
-      <Modal show={showErrorModal} centered onHide={() => setShowErrorModal(false)}>
+      <Modal show={showErrorModal} centered onHide={() => {setShowErrorModal(false); if (tryOnMode === "realtime") resetToScanning();}}>
         <Modal.Header closeButton><Modal.Title style={{ color: 'black' }}>Detection Failed</Modal.Title></Modal.Header>
         <Modal.Body className="text-center p-4">
           <p style={{ color: '#333' }}>{errorMessage}</p>
-          <Button variant="danger" onClick={() => {setShowErrorModal(false); resetToScanning();}} className="mt-3">OK</Button>
+          <Button variant="danger" onClick={() => {setShowErrorModal(false); if (tryOnMode === "realtime") resetToScanning();}} className="mt-3">OK</Button>
         </Modal.Body>
       </Modal>
     </div>
