@@ -709,7 +709,17 @@ export default function VirtualTryOnApp() {
             </button>
             
             {!cameraAvailable && (
-              <button disabled={isProcessing} onClick={() => fileInputRef.current?.click()} className="upload-link-btn" style={{ marginTop: '12px' }}>
+              <button 
+                disabled={isProcessing} 
+                onClick={ () => {
+                  killPageCamera();
+                  setUploadedPhoto(null);
+                  setTryOnMode("photo");
+                  setAppStage("TRY_ON");
+                }}
+                className="upload-link-btn" 
+                style={{ marginTop: '12px'}}
+              >
                 Or upload a photo
               </button>
             )}
