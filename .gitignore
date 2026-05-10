@@ -1,6 +1,5 @@
 # dataset
-face_shape_classifier/dataset/
-face_shape_detector/
+face_shape_classifier/
 
 # python env
 final_env/
