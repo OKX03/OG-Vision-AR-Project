@@ -30,7 +30,7 @@ export default function ProductsPage() {
   const genders = ["Men", "Women", "Unisex"];
   const shapes = ["Square", "Rectangle", "Round", "Browline", "Wayfarer"];
   const materials = ["Metal", "Plastic", "Acetate"];
-  const faceShapes = ["Oval", "Round", "Square", "Heart", 'Diamond'];
+  const faceShapes = ["Oval", "Round", "Square", "Heart", 'Oblong'];
 
   const [sortOption, setSortOption] = useState("default");
 
@@ -502,7 +502,25 @@ const Filters = ({
       </div>
 
       <div className="mb-4">
-        <h6 className="fw-semibold">Frame Size</h6>
+        <div className="d-flex align-items-center mb-2">
+          <h6 className="fw-semibold mb-0">Frame Size</h6>
+
+          <div className="custom-tooltip-container ms-2">
+            <i
+              className="bi bi-question-circle text-muted"
+              style={{ cursor: "help", fontSize: "0.9rem" }}
+            ></i>
+
+            <div className="custom-tooltip-content shadow-sm">
+              <div className="fw-bold mb-1 border-bottom pb-1">Lens Width:</div>
+              <div className="d-flex justify-content-between"><span>S (Small):</span> <span>&lt; 49mm</span></div>
+              <div className="d-flex justify-content-between"><span>M (Medium):</span> <span>49 - 54mm</span></div>
+              <div className="d-flex justify-content-between"><span>L (Large):</span> <span>55 - 58mm</span></div>
+              <div className="d-flex justify-content-between"><span>XL (Extra Large):</span> <span>&gt; 58mm</span></div>
+            </div>
+          </div>
+        </div>
+
         {sizes.map((s: string) => (
           <div key={s} className="form-check">
             <input

@@ -28,7 +28,7 @@ export default function EditProductPage() {
     quantity: 0
   });
 
-  const [faceShapeOptions] = useState(['Oval', 'Round', 'Square', 'Heart', 'Diamond']);
+  const [faceShapeOptions] = useState(['Oval', 'Round', 'Square', 'Heart', 'Oblong']);
   const [selectedFaceShapes, setSelectedFaceShapes] = useState<string[]>([]);
   const [colorName, setColorName] = useState('');
   const [errors, setErrors] = useState<any>({});

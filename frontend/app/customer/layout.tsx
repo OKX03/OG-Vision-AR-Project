@@ -1,8 +1,8 @@
 'use client';
 
 import React, { ReactNode, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authService } from '@/services/auth.service';
+import { useRouter, usePathname } from 'next/navigation';
+import { userService } from '@/services/user.service';
 import RoleGuard from '@/guard/role-guard';
 import './layout.css';
 
@@ -12,6 +12,7 @@ type Props = {
 
 export default function UserLayout({ children }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -19,7 +20,11 @@ export default function UserLayout({ children }: Props) {
   }, []);
 
   const logout = async () => {
-    await authService.logout();
+    await userService.logout();
+  };
+
+  const checkActive = (path: string) => {
+    return pathname.includes(path) ? 'active-link' : '';
   };
 
   return (
@@ -68,7 +73,7 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
-                  className="nav-link cursor-pointer"
+                  className={`nav-link cursor-pointer ${checkActive('/customer/home')}`}
                   onClick={() => {
                     router.push('/customer/home');
                     setMenuOpen(false);
@@ -80,7 +85,7 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
-                  className="nav-link cursor-pointer"
+                  className={`nav-link cursor-pointer ${checkActive('/customer/product-list')}`}
                   onClick={() => {
                     router.push('/customer/product-list');
                     setMenuOpen(false);
@@ -92,9 +97,9 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
-                  className="nav-link cursor-pointer"
+                  className={`nav-link cursor-pointer ${checkActive('/customer/virtual-try-on')}`}
                   onClick={() => {
-                    router.push('/customer/virtual-try-on/entry');
+                    router.push('/customer/virtual-try-on');
                     setMenuOpen(false);
                   }}
                 >
@@ -104,7 +109,7 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
-                  className="nav-link cursor-pointer"
+                  className={`nav-link cursor-pointer ${checkActive('/customer/booking-list')}`}
                   onClick={() => {
                     router.push('/customer/booking-list');
                     setMenuOpen(false);

@@ -422,7 +422,7 @@ export default function UserProductDetails() {
           </div>
 
           <div className="row mb-3">
-            <div className="col-4 text-muted small">Size</div>
+            <div className="col-4 text-muted small">Frame Size</div>
             <div className="col-8">
               <div>{product.frameSize}</div>
               <div className="d-flex flex-wrap gap-2 mt-2">
@@ -434,7 +434,7 @@ export default function UserProductDetails() {
           </div>
 
           <div className="row mb-3">
-            <div className="col-4 text-muted small">Best For</div>
+            <div className="col-4 text-muted small">Suitable Face Shapes</div>
             <div className="col-8 d-flex flex-wrap gap-2">
               {product.faceShape?.map((shape) => (
                 <span key={shape} className="badge bg-dark">
@@ -448,7 +448,7 @@ export default function UserProductDetails() {
       </div>
 
       <div className="mt-5 pt-4 border-top">
-        <h5 className="fw-bold text-uppercase mb-3">Design & Details</h5>
+        <h5 className="fw-bold text-uppercase mb-3">Product Description</h5>
         <p className="text-muted">{product.description}</p>
       </div>
 

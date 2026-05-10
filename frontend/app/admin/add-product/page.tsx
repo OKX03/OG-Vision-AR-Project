@@ -38,7 +38,7 @@ export default function AddProductPage() {
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const faceShapeOptions = ['Oval', 'Round', 'Square', 'Heart', 'Diamond'];
+  const faceShapeOptions = ['Oval', 'Round', 'Square', 'Heart', 'Oblong'];
 
   const handleChange = (field: string, value: any) => {
     setNewProduct({ ...newProduct, [field]: value });

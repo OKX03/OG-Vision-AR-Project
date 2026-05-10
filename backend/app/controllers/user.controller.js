@@ -105,8 +105,6 @@ exports.resetPassword = async (req, res) => {
   res.status(200).send({ message: "Password has been reset successfully" });
 };
 
-// --- PROFILE MANAGEMENT METHODS ---
-
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.userId, {

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { authService } from "@/services/auth.service";
+import { userService } from "@/services/user.service";
 
 export default function AuthInitializer() {
 
   useEffect(() => {
-    authService.setAutoLogout();
+    userService.setAutoLogout();
   }, []);
 
   return null;

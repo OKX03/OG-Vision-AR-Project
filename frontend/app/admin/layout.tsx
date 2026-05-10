@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { authService } from "@/services/auth.service";
+import { useRouter, usePathname } from "next/navigation";
+import { userService } from "@/services/user.service";
 import RoleGuard from "@/guard/role-guard";
 import "./layout.css";
 
@@ -13,11 +13,22 @@ interface Props {
 
 export default function AdminLayout({ children, title = "OG Vision AR" }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const logout = async () => {
-    await authService.logout();
+    await userService.logout();
+  };
+
+  const navigateTo = (path: string) => {
+    router.push(path);
+    setIsOpen(false);
+  };
+
+  const checkActive = (path: string) => {
+    return pathname.includes(path) ? "active" : "";
   };
 
   return (
@@ -45,10 +56,30 @@ export default function AdminLayout({ children, title = "OG Vision AR" }: Props)
 
       {/* Side Menu */}
       <nav className={`sidenav ${isOpen ? "open" : ""}`}>
-        <Link href="/admin/home">Home</Link>
-        <Link href="/admin/product-list">Product</Link>
-        <Link href="/admin/virtual-try-on">Virtual Try-On</Link>
-        <Link href="/admin/booking-list">Booking</Link> 
+        <div 
+          className={`sidenav-item ${checkActive('/admin/home')}`} 
+          onClick={() => navigateTo('/admin/home')}
+        >
+          Home
+        </div>
+        <div 
+          className={`sidenav-item ${checkActive('/admin/product-list')}`} 
+          onClick={() => navigateTo('/admin/product-list')}
+        >
+          Product
+        </div>
+        <div 
+          className={`sidenav-item ${checkActive('/admin/virtual-try-on')}`} 
+          onClick={() => navigateTo('/admin/virtual-try-on')}
+        >
+          Virtual Try-On
+        </div>
+        <div 
+          className={`sidenav-item ${checkActive('/admin/booking-list')}`} 
+          onClick={() => navigateTo('/admin/booking-list')}
+        >
+          Booking
+        </div> 
       </nav>
 
       {/* Main Content */}
