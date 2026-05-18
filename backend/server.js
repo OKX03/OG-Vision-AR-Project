@@ -29,6 +29,8 @@ require("./app/routes/product.route")(app);
 require("./app/routes/user.route")(app);
 require("./app/routes/vto.route")(app);
 require("./app/routes/booking.route")(app);
+require("./app/routes/faq.route")(app);
+require("./app/routes/chatbot.route")(app);
 
 
 const storage = multer.diskStorage({

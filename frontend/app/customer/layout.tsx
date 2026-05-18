@@ -109,6 +109,18 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
+                  className={`nav-link cursor-pointer ${checkActive('/customer/customer-service')}`}
+                  onClick={() => {
+                    router.push('/customer/customer-service');
+                    setMenuOpen(false);
+                  }}
+                >
+                  Customer Service
+                </span>
+              </li>
+
+              <li className="nav-item">
+                <span
                   className={`nav-link cursor-pointer ${checkActive('/customer/booking-list')}`}
                   onClick={() => {
                     router.push('/customer/booking-list');

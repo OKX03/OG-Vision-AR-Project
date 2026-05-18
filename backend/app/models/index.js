@@ -24,6 +24,9 @@ db.product_image = require("./product_image.model.js")(sequelize, Sequelize);
 db.ar_model = require("./ar_model.model.js")(sequelize, Sequelize);
 db.user = require("./user.model.js")(sequelize, Sequelize);
 db.booking = require("./booking.model.js")(sequelize, Sequelize);
+db.faq = require("./faq.model.js")(sequelize, Sequelize); 
+db.chat_session = require("./chat_session.model.js")(sequelize, Sequelize);
+db.chat_message = require("./chat_message.model.js")(sequelize, Sequelize);
 
 db.product.hasMany(db.product_image, {
   foreignKey: "product_id",
@@ -71,6 +74,30 @@ db.booking.belongsTo(db.product, {
   foreignKey: "product_id",
   targetKey: "product_id",
   as: "product"
+});
+
+db.user.hasMany(db.chat_session, {
+  foreignKey: "user_id",
+  sourceKey: "user_id",
+  as: "chat_sessions"
+});
+
+db.chat_session.belongsTo(db.user, {
+  foreignKey: "user_id",
+  targetKey: "user_id",
+  as: "user"
+});
+
+db.chat_session.hasMany(db.chat_message, {
+  foreignKey: "session_id",
+  sourceKey: "session_id",
+  as: "messages"
+});
+
+db.chat_message.belongsTo(db.chat_session, {
+  foreignKey: "session_id",
+  targetKey: "session_id",
+  as: "session"
 });
 
 module.exports = db;

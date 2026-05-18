@@ -80,6 +80,12 @@ export default function AdminLayout({ children, title = "OG Vision AR" }: Props)
         >
           Booking
         </div> 
+        <div 
+          className={`sidenav-item ${checkActive('/admin/faq-list')}`} 
+          onClick={() => navigateTo('/admin/faq-list')}
+        >
+          FAQs Management
+        </div>
       </nav>
 
       {/* Main Content */}

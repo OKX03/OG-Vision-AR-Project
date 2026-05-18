@@ -99,7 +99,7 @@ export default function UserHomePage() {
         </h2>
 
         <div className="row g-4 justify-content-center">
-          {products.map((product) => (
+          {products.slice(0, 5).map((product) => (
             <div
               key={product.product_id}
               className="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2"
