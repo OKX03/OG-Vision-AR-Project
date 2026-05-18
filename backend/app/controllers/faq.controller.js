@@ -75,9 +75,16 @@ exports.updateFAQ = async (req, res) => {
         message: "FAQ was updated successfully."
       });
     } else {
-      res.status(400).send({
-        message: `Cannot update FAQ with id=${id}. Maybe FAQ was not found or req.body is empty!`
-      });
+      const existingFaq = await FAQ.findByPk(id);
+      if (existingFaq) {
+        res.send({
+          message: "FAQ was updated successfully (no changes made)."
+        });
+      } else {
+        res.status(404).send({
+          message: `Cannot update FAQ with id=${id}. FAQ not found.`
+        });
+      }
     }
   } catch (err) {
     res.status(500).send({

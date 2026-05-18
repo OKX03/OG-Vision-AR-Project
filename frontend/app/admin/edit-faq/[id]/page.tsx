@@ -17,6 +17,7 @@ export default function EditFAQPage() {
   });
 
   const [errors, setErrors] = useState<any>({});
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
@@ -90,9 +91,13 @@ export default function EditFAQPage() {
       setShowIncomplete(true);
       return;
     }
+    setShowConfirm(true);
+  };
 
+  const confirmSaveFaq = async () => {
     try {
       await faqService.updateFAQ(id, faq);
+      setShowConfirm(false);
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
@@ -174,13 +179,29 @@ export default function EditFAQPage() {
             />
           </div>
 
-          <div className="d-flex justify-content-end">
-            <button className="btn btn-success fw-medium px-4" onClick={onSubmit}>
+          <div className="d-flex justify-content-end gap-3">
+            <button className="btn btn-danger" onClick={() => router.back()}>
+              Cancel
+            </button>
+            <button className="btn btn-success fw-bold px-4" onClick={onSubmit}>
               Save
             </button>
           </div>
         </div>
       </div>
+
+      <Modal show={showConfirm} centered onHide={() => setShowConfirm(false)}>
+        <Modal.Header>
+          <Modal.Title>Confirm Edit FAQ</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          Are you sure to save these changes to the FAQ?
+        </Modal.Body>
+        <Modal.Footer className="justify-content-center">
+          <Button variant="success" onClick={confirmSaveFaq}>Confirm</Button>
+          <Button variant="danger" onClick={() => setShowConfirm(false)}>Cancel</Button>
+        </Modal.Footer>
+      </Modal>
 
       <Modal show={showIncomplete} centered onHide={() => setShowIncomplete(false)}>
         <Modal.Body className="text-center p-4">
