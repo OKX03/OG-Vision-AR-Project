@@ -1,0 +1,82 @@
+.chatbot-page-container {
+  max-width: 900px;
+}
+
+.chatbot-window {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+}
+
+.chatbot-messages-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.page-chat-message {
+  max-width: 80%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-chat-message.user {
+  align-self: flex-end;
+}
+
+.page-chat-message.user .message-content {
+  background-color: #212529;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 18px 18px 0px 18px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.page-chat-message.model {
+  align-self: flex-start;
+}
+
+.page-chat-message.model .message-content {
+  background-color: #fff;
+  color: #212529;
+  padding: 12px 18px;
+  border-radius: 18px 18px 18px 0px;
+  border: 1px solid #dee2e6;
+  font-size: 1rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.chatbot-input-section {
+  background-color: #f8f9fa;
+}
+
+.chatbot-input-section input:focus {
+  box-shadow: none;
+  border-color: #212529;
+}
+
+/* Specific styling for product recommendation cards within chat */
+.chat-product-card {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.chat-product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border-color: #adb5bd;
+}
