@@ -22,8 +22,13 @@ export default function BookingListPage() {
   const [confirmAction, setConfirmAction] = useState<{
     id: number;
     status: string;
+    noShowCount?: number;
   } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -57,11 +62,13 @@ export default function BookingListPage() {
     return time.replace(".", ":");
   };
 
-  const events = filteredBookings.map(b => {
-    const [start, end] = b.time_slot.split("-");
+  const events = filteredBookings
+    .filter((b) => b.status === "Accepted")
+    .map((b) => {
+      const [start, end] = b.time_slot.split("-");
 
-    return {
-      title: `${b.product?.brand} (${b.status})`,
+      return {
+        title: `${b.user?.username} - ${b.product?.brand}`,
       start: new Date(`${b.booking_date} ${parseTime(start.trim())}`),
       end: new Date(`${b.booking_date} ${parseTime(end.trim())}`),
       resource: b
@@ -126,25 +133,43 @@ export default function BookingListPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const map: any = {
-      Pending: "warning",
-      Accepted: "success",
-      Rejected: "danger",
-      Cancelled: "secondary",
-      Expired: "dark",
-      "No Show": "warning",
-      Completed: "primary"
-    };
-
-    return <span className={`badge bg-${map[status]}`}>{status}</span>;
+    switch (status) {
+      case "Pending":
+        return <span className="badge" style={{ backgroundColor: "#fd7e14" }}>{status}</span>;
+      case "Accepted":
+        return <span className="badge bg-primary">{status}</span>;
+      case "Completed":
+        return <span className="badge bg-success">{status}</span>;
+      case "Rejected":
+        return <span className="badge bg-danger">{status}</span>;
+      case "Cancelled":
+        return <span className="badge bg-secondary">{status}</span>;
+      case "Expired":
+        return <span className="badge bg-dark">{status}</span>;
+      case "No Show":
+        return <span className="badge text-dark" style={{ backgroundColor: "#ffea00" }}>{status}</span>;
+      default:
+        return <span className="badge bg-light text-dark">{status}</span>;
+    }
   };
 
-  const onClick = (id: number, status: string) => {
-    setConfirmAction({ id, status });
+  const onClick = async (booking: any, status: string) => {
+    setConfirmAction({ id: booking.booking_id, status });
     setShowConfirm(true);
+
+    if (status === "No Show" && booking.user_id) {
+      try {
+        const res = await bookingService.getBookingsByUserId(booking.user_id);
+        const userBookings = res.data;
+        const count = userBookings.filter((b: any) => b.status === "No Show").length;
+        setConfirmAction({ id: booking.booking_id, status, noShowCount: count });
+      } catch (err) {
+        console.error("Failed to fetch no show count", err);
+      }
+    }
   };
 
-  const getActionMessage = (status: string) => {
+  const getActionMessage = (status: string, noShowCount?: number) => {
     switch (status) {
       case "Accepted":
         return "Are you sure you want to accept this booking?";
@@ -153,6 +178,16 @@ export default function BookingListPage() {
       case "Completed":
         return "Mark this booking as completed?";
       case "No Show":
+        if (noShowCount !== undefined) {
+          return (
+            <>
+              Mark this booking as no show?
+              <small className="text-muted d-block mt-2">
+                This user has {noShowCount} no show records. Reaching 3 times will ban this account for booking.
+              </small>
+            </>
+          );
+        }
         return "Mark this booking as no show?";
       default:
         return "Are you sure to proceed?";
@@ -202,28 +237,30 @@ export default function BookingListPage() {
       case "Pending":
         return (
           <div className="d-flex justify-content-center gap-2">
-            <Button size="sm" variant="success"
-              onClick={() => onClick(b.booking_id, "Accepted")}>
+            <Button size="sm" variant="primary"
+              onClick={() => onClick(b, "Accepted")}>
               Accept
             </Button>
 
             <Button size="sm" variant="danger"
-              onClick={() => onClick(b.booking_id, "Rejected")}>
+              onClick={() => onClick(b, "Rejected")}>
               Reject
             </Button>
           </div>
         );
 
       case "Accepted":
+      case "Expired":
         return (
           <div className="d-flex justify-content-center gap-2">
-            <Button size="sm" variant="primary"
-              onClick={() => onClick(b.booking_id, "Completed")}>
+            <Button size="sm" variant="success"
+              onClick={() => onClick(b, "Completed")}>
               Complete
             </Button>
 
-            <Button size="sm" variant="warning"
-              onClick={() => onClick(b.booking_id, "No Show")}>
+            <Button size="sm"
+              style={{ backgroundColor: "#ffea00", borderColor: "#ffea00", color: "#212529" }}
+              onClick={() => onClick(b, "No Show")}>
               No Show
             </Button>
           </div>
@@ -263,27 +300,31 @@ export default function BookingListPage() {
             </button>
           </div>
 
-          <input
-            type="text"
-            className="form-control ms-2 mb-3"
-            style={{ maxWidth: "300px" }}
-            placeholder="Search by user or product..."
-            value={searchText}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
+          {viewMode === "list" && (
+            <>
+              <input
+                type="text"
+                className="form-control ms-2 mb-3"
+                style={{ maxWidth: "300px" }}
+                placeholder="Search by user or product..."
+                value={searchText}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
 
-          <div className="d-flex flex-wrap gap-2 justify-content-end me-2 mb-2">
-            {STATUS.map(s => (
-              <button
-                key={s}
-                className={`btn btn-sm ${statusFilter === s ? "btn-primary" : "btn-outline-primary"
-                  }`}
-                onClick={() => handleStatusFilter(s)}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+              <div className="d-flex flex-wrap gap-2 justify-content-end me-2 mb-2">
+                {STATUS.map(s => (
+                  <button
+                    key={s}
+                    className={`btn btn-sm ${statusFilter === s ? "btn-primary" : "btn-outline-primary"
+                      }`}
+                    onClick={() => handleStatusFilter(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {viewMode === "list" && (
@@ -379,15 +420,48 @@ export default function BookingListPage() {
               events={events}
               startAccessor="start"
               endAccessor="end"
+              views={['month']}
+              date={currentDate}
+              onNavigate={(newDate) => {
+                const now = new Date();
+                const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+                if (newDate >= currentMonthStart && newDate <= nextMonthEnd) {
+                  setCurrentDate(newDate);
+                }
+              }}
               eventPropGetter={eventStyleGetter}
               onSelectEvent={(event: any) => {
-                alert(`Booking: ${event.title}`);
+                setSelectedEvent(event.resource);
+                setShowEventModal(true);
               }}
             />
           </div>
         )}
 
       </div>
+
+      <Modal show={showEventModal} centered onHide={() => setShowEventModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Booking Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedEvent && (
+            <div className="p-2">
+              <p className="mb-2"><strong>User:</strong> {selectedEvent.user?.username} ({selectedEvent.user?.email})</p>
+              <p className="mb-2"><strong>Product:</strong> {selectedEvent.product?.brand} - {selectedEvent.product?.model}</p>
+              <p className="mb-2"><strong>Date:</strong> {selectedEvent.booking_date}</p>
+              <p className="mb-2"><strong>Time:</strong> {selectedEvent.time_slot}</p>
+              <p className="mb-0"><strong>Status:</strong> {getStatusBadge(selectedEvent.status)}</p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEventModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       <Modal show={showConfirm} centered onHide={() => setShowConfirm(false)}>
         <Modal.Header>
@@ -396,7 +470,7 @@ export default function BookingListPage() {
 
         <Modal.Body className="text-center">
 
-          <p>{confirmAction && getActionMessage(confirmAction.status)}</p>
+          <p>{confirmAction && getActionMessage(confirmAction.status, confirmAction.noShowCount)}</p>
 
           {confirmAction?.status === "Rejected" && (
             <textarea

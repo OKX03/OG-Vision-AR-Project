@@ -36,6 +36,7 @@ export default function UserProductDetails() {
   const [showExceedBookingLimit, setShowExceedBookingLimit] = useState(false);
   const [showDuplicateBooking, setShowDuplicateBooking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [canBookNow, setCanBookNow] = useState(true);
 
   const getCurrentUserId = () => {
     try {
@@ -69,6 +70,40 @@ export default function UserProductDetails() {
     fetchProduct();
     if (currentUserId) fetchUserBookings();
   }, [productId]);
+
+  useEffect(() => {
+    const checkStoreStatus = () => {
+      const now = new Date();
+      now.setHours(17, 1, 0, 0);  
+      const dayKey = now.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+      const hours = businessHours[dayKey];
+      
+      if (!hours) {
+        setCanBookNow(false);
+        return;
+      }
+      
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
+      
+      const [openH, openM] = hours.open.split(":").map(Number);
+      const openTotalMinutes = openH * 60 + openM;
+      
+      const [closeH, closeM] = hours.close.split(":").map(Number);
+      const cutoffTotalMinutes = (closeH - 1) * 60 + closeM;
+      
+      if (currentTotalMinutes >= openTotalMinutes && currentTotalMinutes < cutoffTotalMinutes) {
+        setCanBookNow(true);
+      } else {
+        setCanBookNow(false);
+      }
+    };
+
+    checkStoreStatus();
+    const interval = setInterval(checkStoreStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchUserBookings = async () => {
     try {
@@ -367,18 +402,32 @@ export default function UserProductDetails() {
           </div>
 
           {productAvailable ? (
-            <div className="mb-4">
-              <button
-                className="btn btn-primary mb-1"
-                onClick={handleOpenBookingModal}
-              >
-                Love it? Reserve Now
-              </button>
+            canBookNow ? (
+              <div className="mb-4">
+                <button
+                  className="btn btn-primary mb-1"
+                  onClick={handleOpenBookingModal}
+                >
+                  Love it? Reserve Now
+                </button>
 
-              <p className="text-muted small mb-3">
-                Reserve this item for up to 3 days for physical try-on.
-              </p>
-            </div>
+                <p className="text-muted small mb-3">
+                  Reserve this item for up to 3 days for physical try-on.
+                </p>
+              </div>
+            ) : (
+              <div className="mb-4">
+                <button
+                  className="btn btn-secondary mb-1"
+                  disabled
+                >
+                  Booking Closed
+                </button>
+                <p className="text-muted small mb-3">
+                  Booking is closed. Please come back during operating hours.
+                </p>
+              </div>
+            )
           ) : (
             <div className="mb-4">
               <button
@@ -557,7 +606,7 @@ export default function UserProductDetails() {
               Important Reminder
             </p>
             <ul className="mb-0 ps-3">
-              <li className="mb-1">Cancellation must be made at least <strong>24 hours</strong> before the appointment.</li>
+              <li className="mb-1">Cancellation must be made at least <strong>24 hours</strong> before the booking date and time once the booking is accepted by the admin.</li>
               <li>Accumulating <strong>three (3) no-shows</strong> will result in your account being banned from making future bookings.</li>
             </ul>
           </div>

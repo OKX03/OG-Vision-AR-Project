@@ -31,6 +31,7 @@ require("./app/routes/vto.route")(app);
 require("./app/routes/booking.route")(app);
 require("./app/routes/faq.route")(app);
 require("./app/routes/chatbot.route")(app);
+require("./app/cron/booking.cron"); 
 
 
 const storage = multer.diskStorage({

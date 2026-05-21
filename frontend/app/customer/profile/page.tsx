@@ -16,12 +16,11 @@ export default function ProfilePage() {
 
   return (
     <div className="container mt-5 d-flex justify-content-center">
-      {/* Profile Card Container */}
       <div className="card border-0 shadow-lg" style={{ width: "450px", borderRadius: "15px", overflow: "hidden" }}>
 
         <div style={{ 
           height: "120px", 
-          backgroundImage: "linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%)", /* 替换为你喜欢的背景图或渐变 */
+          backgroundImage: "linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%)",
           backgroundSize: "cover" 
         }}></div>
 
@@ -30,10 +29,23 @@ export default function ProfilePage() {
                style={{ width: "100px", height: "100px" }}>
             <i className="bi bi-person-fill text-white" style={{ fontSize: "3rem" }}></i>
           </div>
-          <h4 className="mt-2 fw-bold text-dark">{user.username || "User0001"}</h4>
+          
+          <h4 className="mt-2 mb-1 fw-bold text-dark">{user.username || "User0001"}</h4>
+          
+          <span 
+            className={`badge rounded-pill border ${
+              user.account_status === 'Banned' 
+                ? 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25' 
+                : 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
+            }`}
+            style={{ fontSize: "0.75rem", fontWeight: "600", padding: "4px 10px", letterSpacing: "0.5px" }}
+          >
+            <i className={`bi ${user.account_status === 'Banned' ? 'bi-slash-circle' : 'bi-shield-check'} me-1`}></i>
+            {user.account_status || "Active"}
+          </span>
         </div>
 
-        <div className="card-body px-4 pb-4">
+        <div className="card-body px-4 pb-4 mt-3">
           <div className="mb-3 text-start">
             <label className="form-label text-muted small fw-bold">Email</label>
             <input 

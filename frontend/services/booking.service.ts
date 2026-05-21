@@ -7,7 +7,7 @@ export const bookingService = {
 
   getBookingById: (id: string) => axiosInstance.get(`${BASE_URL}/${id}`),
 
-  getBookingsByUserId: (userId: string) => axiosInstance.get(`${BASE_URL}/customer/${userId}`),
+  getBookingsByUserId: (userId: string) => axiosInstance.get(`${BASE_URL}/user/${userId}`),
 
   createBooking: (data: any) => axiosInstance.post(BASE_URL, data),
 

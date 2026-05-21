@@ -13,12 +13,12 @@ export default function EditProfilePage() {
     gender: "",
     email: ""
   });
-
+  
+  const [accountStatus, setAccountStatus] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-
 
   useEffect(() => {
     userService.getProfile().then(res => {
@@ -27,6 +27,7 @@ export default function EditProfilePage() {
         gender: res.data.gender,
         email: res.data.email
       });
+      setAccountStatus(res.data.account_status);
     });
   }, []);
 
@@ -61,7 +62,6 @@ export default function EditProfilePage() {
     }
   }
 
-
   return (
     <div className="container mt-5 d-flex justify-content-center">
       <div className="card border-0 shadow-lg" style={{ width: "450px", borderRadius: "15px", overflow: "hidden" }}>
@@ -89,6 +89,20 @@ export default function EditProfilePage() {
             <i className="bi bi-pencil-fill ms-2 text-muted" style={{ fontSize: "0.9rem" }}></i>
           </div>
           {submitted && errors.username && <div className="text-danger small mt-1">{errors.username}</div>}
+
+          <div className="mt-1">
+            <span 
+              className={`badge rounded-pill border ${
+                accountStatus === 'Banned' 
+                  ? 'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25' 
+                  : 'bg-success bg-opacity-10 text-success border-success border-opacity-25'
+              }`}
+              style={{ fontSize: "0.75rem", fontWeight: "600", padding: "4px 10px", letterSpacing: "0.5px" }}
+            >
+              <i className={`bi ${accountStatus === 'Banned' ? 'bi-slash-circle' : 'bi-shield-check'} me-1`}></i>
+              {accountStatus || "Active"}
+            </span>
+          </div>
         </div>
 
         <div className="card-body px-4 pb-4 mt-3">
@@ -139,7 +153,6 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      {/* Confirm Modal */}
       <Modal show={showConfirm} centered onHide={() => setShowConfirm(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Edit</Modal.Title>
@@ -153,7 +166,6 @@ export default function EditProfilePage() {
         </Modal.Footer>
       </Modal>    
 
-      {/* Success Modal */}
       <Modal show={showSuccess} centered backdrop="static">
         <Modal.Body className="text-center p-4">
           <div className="text-success mb-3">

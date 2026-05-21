@@ -1,27 +1,22 @@
 const cron = require("node-cron");
 const { Op } = require("sequelize");
-const User = require("../models").user;
+const db = require("../models");
+const User = db.user;
+const Booking = db.booking;
 const mailService = require("../services/mail.service");
 
-const Booking = db.booking;
-
-cron.schedule("0 17 * * *", async () => {
-  console.log("Running Reminder Cron (17:00)...");
-
+const sendRemindersForDate = async (dateStr) => {
   try {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const dateStr = tomorrow.toISOString().split("T")[0];
-
+    console.log("dateSTR is: ", dateStr); 
     const bookings = await Booking.findAll({
       where: {
-        booking_date: {
-          [Op.like]: `${dateStr}%`
-        },
+        booking_date: dateStr,
         status: "Pending"
       },
-      include: [{ model: User, as: "user" }]
+      include: [
+        { model: User, as: "user" },
+        { model: db.product, as: "product" }
+      ]
     });
 
     for (const booking of bookings) {
@@ -31,31 +26,28 @@ cron.schedule("0 17 * * *", async () => {
         console.error("Reminder email error:", err);
       }
     }
-
-    console.log(`Reminder sent for ${bookings.length} bookings`);
+    console.log(`Reminder sent for ${bookings.length} bookings on ${dateStr}`);
   } catch (err) {
     console.error("Reminder cron error:", err);
   }
-});
+};
 
-cron.schedule("0 8 * * *", async () => {
-  console.log("Running Auto Reject Cron (08:00)...");
-
+const autoRejectForDate = async (dateStr) => {
   try {
-    const today = new Date().toISOString().split("T")[0];
-
     const bookings = await Booking.findAll({
       where: {
-        booking_date: {
-          [Op.like]: `${today}%`
-        },
+        booking_date: dateStr,
         status: "Pending"
       },
-      include: [{ model: db.user, as: "user" }]
+      include: [
+        { model: User, as: "user" },
+        { model: db.product, as: "product" }
+      ]
     });
 
     for (const booking of bookings) {
       booking.status = "Rejected";
+      booking.rejection_reason = "No action by admin taken. Auto rejected.";
       await booking.save();
 
       try {
@@ -64,15 +56,50 @@ cron.schedule("0 8 * * *", async () => {
         console.error("Reject email error:", err);
       }
     }
-
-    console.log(`Auto rejected ${bookings.length} bookings`);
+    console.log(`Auto rejected ${bookings.length} bookings on ${dateStr}`);
   } catch (err) {
     console.error("Auto reject cron error:", err);
   }
+};
+
+// Reminder Cron (Mon-Fri 18:00) - For tomorrow
+cron.schedule("0 18 * * 1-5", async () => {
+  console.log("Running Reminder Cron (Mon-Fri 18:00)...");
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateStr = tomorrow.toISOString().split("T")[0];
+  await sendRemindersForDate(dateStr);
 });
 
-cron.schedule("0 * * * *", async () => {
-  console.log("Running Auto Expired Cron (every hour)...");
+// Reminder Cron (Sat 17:00) - For Monday
+cron.schedule("0 17 * * 6", async () => {
+  console.log("Running Reminder Cron (Sat 17:00)...");
+  const monday = new Date();
+  monday.setDate(monday.getDate() + 2);
+  const dateStr = monday.toISOString().split("T")[0];
+  await sendRemindersForDate(dateStr);
+});
+
+// Auto Reject Cron (Mon-Fri 19:00) - For tomorrow
+cron.schedule("0 19 * * 1-5", async () => {
+  console.log("Running Auto Reject Cron (Mon-Fri 19:00)...");
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateStr = tomorrow.toISOString().split("T")[0];
+  await autoRejectForDate(dateStr);
+});
+
+// Auto Reject Cron (Sat 18:00) - For Monday
+cron.schedule("0 18 * * 6", async () => {
+  console.log("Running Auto Reject Cron (Sat 18:00)...");
+  const monday = new Date();
+  monday.setDate(monday.getDate() + 2);
+  const dateStr = monday.toISOString().split("T")[0];
+  await autoRejectForDate(dateStr);
+});
+
+cron.schedule("*/30 * * * *", async () => {
+  console.log("Running Auto Expired Cron (every 30 minutes)...");
 
   try {
     const now = new Date();
@@ -87,15 +114,17 @@ cron.schedule("0 * * * *", async () => {
 
     for (const booking of bookings) {
       try {
-        const bookingDate = booking.booking_date.toISOString().split("T")[0];
-
+        const bookingDate = booking.booking_date;
         const [start, end] = booking.time_slot.split("-");
         const endTime = end.trim(); 
 
         const endDateTime = new Date(`${bookingDate} ${endTime}`);
+        console.log("endDateTime is: ", endDateTime); 
+        console.log("now is: ", now); 
 
         if (now >= endDateTime) {
           booking.status = "Expired";
+          booking.expired_at = now; 
           await booking.save();
           expiredCount++;
         }

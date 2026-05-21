@@ -51,7 +51,9 @@ export default function MyBookingsPage() {
         (b) =>
           b.status === "Cancelled" ||
           b.status === "Rejected" ||
-          b.status === "Completed"
+          b.status === "Completed" ||
+          b.status === "Expired" ||
+          b.status === "No Show"
       );
     }
 
@@ -60,12 +62,22 @@ export default function MyBookingsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Pending": return "warning";
-      case "Accepted": return "success";
-      case "Rejected": return "danger";
-      case "Cancelled": return "secondary";
-      case "Completed": return "dark";
-      default: return "light";
+      case "Pending":
+        return <span className="badge" style={{ backgroundColor: "#fd7e14" }}>{status}</span>;
+      case "Accepted":
+        return <span className="badge bg-primary">{status}</span>;
+      case "Completed":
+        return <span className="badge bg-success">{status}</span>;
+      case "Rejected":
+        return <span className="badge bg-danger">{status}</span>;
+      case "Cancelled":
+        return <span className="badge bg-secondary">{status}</span>;
+      case "Expired":
+        return <span className="badge bg-dark">{status}</span>;
+      case "No Show":
+        return <span className="badge text-dark" style={{ backgroundColor: "#ffea00" }}>{status}</span>;
+      default:
+        return <span className="badge bg-light text-dark">{status}</span>;
     }
   };
 
@@ -87,7 +99,7 @@ export default function MyBookingsPage() {
         const diffHours =
           (startDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-        return diffHours >= 12;
+        return diffHours >= 24;
       } catch {
         return false;
       }
@@ -147,6 +159,7 @@ export default function MyBookingsPage() {
       <table className="table table-hover">
         <thead>
           <tr>
+            <th>No</th>
             <th>Product</th>
             <th>Date</th>
             <th>Time</th>
@@ -158,17 +171,15 @@ export default function MyBookingsPage() {
         <tbody>
           {paginated.length === 0 ? (
             <tr>
-              <td colSpan={5} className="text-center text-muted py-4">
+              <td colSpan={6} className="text-center text-muted py-4">
                 No bookings found
               </td>
             </tr>
           ) : (
             paginated.map((b, i) => (
               <tr key={b.booking_id}>
-                <td>
-                  {(currentPage - 1) * pageSize + i + 1}.{" "}
-                  {b.product?.brand} - {b.product?.model}
-                </td>
+                <td>{(currentPage - 1) * pageSize + i + 1}</td>
+                <td>{b.product?.brand} - {b.product?.model}</td>
 
                 <td>
                   {new Date(b.booking_date).toLocaleDateString()}
@@ -177,9 +188,7 @@ export default function MyBookingsPage() {
                 <td>{b.time_slot}</td>
 
                 <td>
-                  <Badge bg={getStatusBadge(b.status)}>
-                    {b.status}
-                  </Badge>
+                  {getStatusBadge(b.status)}
                 </td>
 
                 <td className="text-center">
@@ -257,9 +266,6 @@ export default function MyBookingsPage() {
 
         <Modal.Body className="text-center">
           Are you sure you want to cancel this booking?
-          <p className="text-muted small mt-2">
-            Cancellation must be at least 24 hours before appointment.
-          </p>
         </Modal.Body>
 
         <Modal.Footer className="justify-content-center">

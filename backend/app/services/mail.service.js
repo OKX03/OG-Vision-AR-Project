@@ -16,6 +16,18 @@ const getAdminEmails = async () => {
     return admins.map(a => a.email);
 };
 
+const formatDateWithDay = (dateInput) => {
+  if (!dateInput) return "Unknown Date";
+  const dateStr = typeof dateInput === "string" ? dateInput.split("T")[0] : dateInput.toISOString().split("T")[0];
+  
+  // Create date considering local time to avoid timezone shift
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  
+  const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+  return `${dateStr} (${dayName})`;
+};
+
 exports.sendResetEmail = async (email, token) => {
   const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
@@ -34,6 +46,10 @@ exports.sendResetEmail = async (email, token) => {
 exports.sendNewBookingEmail = async (booking) => {
     const adminEmails = await getAdminEmails();
 
+    const formattedDate = formatDateWithDay(booking.booking_date);
+    const username = booking.user && booking.user.username ? booking.user.username : booking.user_id;
+    const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
+
     return transporter.sendMail({
         from: `"OG Vision" <${process.env.MAIL_USER}>`,
         to: adminEmails,
@@ -42,9 +58,9 @@ exports.sendNewBookingEmail = async (booking) => {
         <h3>New Booking Notification</h3>
         <p>A new booking has been created.</p>
         <ul>
-            <li><strong>User ID:</strong> ${booking.user_id}</li>
-            <li><strong>Product ID:</strong> ${booking.product_id}</li>
-            <li><strong>Date:</strong> ${booking.booking_date}</li>
+            <li><strong>Username:</strong> ${username}</li>
+            <li><strong>Product:</strong> ${productInfo}</li>
+            <li><strong>Date:</strong> ${formattedDate}</li>
             <li><strong>Time Slot:</strong> ${booking.time_slot}</li>
             <li><strong>Status:</strong> ${booking.status}</li>
         </ul>
@@ -55,6 +71,9 @@ exports.sendNewBookingEmail = async (booking) => {
 
 exports.sendBookingReminderEmail = async (booking) => {
     const adminEmails = await getAdminEmails();
+    const formattedDate = formatDateWithDay(booking.booking_date);
+    const username = booking.user && booking.user.username ? booking.user.username : booking.user_id;
+    const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
 
     return transporter.sendMail({
         from: `"OG Vision" <${process.env.MAIL_USER}>`,
@@ -63,8 +82,10 @@ exports.sendBookingReminderEmail = async (booking) => {
         html: `
         <p>There is a booking reminder for tomorrow still in pending.</p>
         <ul>
-            <li>Date: ${booking.booking_date}</li>
-            <li>Time: ${booking.time_slot}</li>
+            <li><strong>Username:</strong> ${username}</li>
+            <li><strong>Product:</strong> ${productInfo}</li>
+            <li><strong>Date:</strong> ${formattedDate}</li>
+            <li><strong>Time Slot:</strong> ${booking.time_slot}</li>
         </ul>
         <p>Please login to admin panel to review.</p>
         `
@@ -72,6 +93,8 @@ exports.sendBookingReminderEmail = async (booking) => {
 };
 
 exports.sendBookingRejectedEmail = async (booking, reason) => {
+  const formattedDate = formatDateWithDay(booking.booking_date);
+  const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
   return transporter.sendMail({
     from: `"OG Vision" <${process.env.MAIL_USER}>`,
     to: booking.user.email,
@@ -79,9 +102,10 @@ exports.sendBookingRejectedEmail = async (booking, reason) => {
     html: `
       <p>Your booking has been rejected.</p>
       <ul>
-        <li>Date: ${booking.booking_date}</li>
-        <li>Time: ${booking.time_slot}</li>
-        <li>Reason: ${reason || "Not specified"}</li>
+        <li><strong>Product:</strong> ${productInfo}</li>
+        <li><strong>Date:</strong> ${formattedDate}</li>
+        <li><strong>Time:</strong> ${booking.time_slot}</li>
+        <li><strong>Reason:</strong> ${reason || "Not specified"}</li>
       </ul>
       <p>Please make a new booking.</p>
     `

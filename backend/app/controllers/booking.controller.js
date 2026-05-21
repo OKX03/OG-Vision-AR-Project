@@ -22,7 +22,14 @@ exports.createBooking = async (req, res) => {
 
     await product.update({ quantity: Math.max(product.quantity - 1, 0) });
 
-    mailService.sendNewBookingEmail(booking)
+    const bookingWithDetails = await Booking.findByPk(booking.booking_id, {
+      include: [
+        { model: db.user, as: "user" },
+        { model: db.product, as: "product" }
+      ]
+    });
+
+    mailService.sendNewBookingEmail(bookingWithDetails)
       .catch(err => console.error("Email error:", err));
 
 
@@ -107,6 +114,31 @@ exports.updateBooking = async (req, res) => {
           quantity: product.quantity + 1
         });
       }
+    }
+
+    if (data.status === "No Show" && oldStatus !== "No Show") {
+      const noShowCount = await Booking.count({
+        where: {
+          user_id: booking.user_id,
+          status: "No Show"
+        }
+      });
+      if (noShowCount >= 3) {
+        await db.user.update(
+          { account_status: "Banned" },
+          { where: { user_id: booking.user_id } }
+        );
+      }
+    }
+    if (data.status === "Rejected" && oldStatus !== "Rejected") {
+      const bookingWithDetails = await Booking.findByPk(id, {
+        include: [
+          { model: db.user, as: "user" },
+          { model: db.product, as: "product" }
+        ]
+      });
+      mailService.sendBookingRejectedEmail(bookingWithDetails, data.rejection_reason)
+        .catch(err => console.error("Reject email error:", err));
     }
 
     return res.json(booking);
