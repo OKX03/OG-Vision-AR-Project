@@ -5,8 +5,7 @@ import { productService } from "@/services/product.service";
 import { Product } from "@/types/product";
 import namer from "color-namer";
 import { Modal, Button } from "react-bootstrap";
-import { useRouter } from "next/navigation"; import "./product-list.css";
-
+import { useRouter } from "next/navigation";
 
 export default function ProductListPage() {
   const router = useRouter();
@@ -19,8 +18,6 @@ export default function ProductListPage() {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-
-
 
   useEffect(() => {
     fetchProducts();
@@ -138,6 +135,7 @@ export default function ProductListPage() {
                 <th>Brand</th>
                 <th>Model</th>
                 <th>Price</th>
+                <th>Qty</th>
                 <th>Color</th>
                 <th>Frame Shape</th>
                 <th>Frame Size</th>
@@ -150,11 +148,14 @@ export default function ProductListPage() {
             <tbody>
               {paginatedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="text-center text-muted py-4">
+                  <td colSpan={13} className="text-center text-muted py-4">
                     No Product Exist
                   </td>
                 </tr>
-              ) : (paginatedProducts.map((p, i) => (
+              ) : (paginatedProducts.map((p, i) => {
+                const qty = p.quantity || 0;
+
+                return (
                 <tr key={p.product_id}>
                   <td className="fw-semibold text-center">{(currentPage - 1) * pageSize + i + 1}</td>
                   <td>
@@ -163,6 +164,19 @@ export default function ProductListPage() {
                   <td className="fw-semibold">{p.brand}</td>
                   <td>{p.model}</td>
                   <td className="text-success fw-semibold">RM {p.price}</td>
+                  <td className="text-center">
+                    {qty === 0 ? (
+                      <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                        Sold Out (0)
+                      </span>
+                    ) : qty <= 3 ? (
+                      <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-50 px-2 py-1">
+                        Low ({qty})
+                      </span>
+                    ) : (
+                      <span className="fw-bold px-2 py-1">{qty}</span>
+                    )}
+                  </td>
                   <td>
                     <div className="d-flex align-items-center">
                       <span className="rounded me-2 border" style={{ width: 16, height: 16, background: p.color }}></span>
@@ -204,7 +218,8 @@ export default function ProductListPage() {
                     )}
                   </td>
                 </tr>
-              )))}
+                );
+              }))}
             </tbody>
           </table>
 
