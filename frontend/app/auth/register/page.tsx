@@ -202,7 +202,7 @@ export default function RegisterPage() {
           </div>
           <h5> Registration Successful!</h5>
           <p className="small text-muted">
-            You can now log in to the system.
+            Please check your email to verify your account before logging in.
           </p>
 
           <Button

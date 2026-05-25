@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const resetTokens = {};
+const verificationTokens = {};
 
 exports.register = async (req, res) => {
   try {
@@ -23,10 +24,20 @@ exports.register = async (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
       gender: req.body.gender,
-      role: req.body.role || "ROLE_CUSTOMER"
+      role: req.body.role || "ROLE_CUSTOMER",
+      account_status: "Unverified"
     });
 
-    res.status(201).send({ message: "User was registered successfully!" });
+    const token = crypto.randomBytes(32).toString("hex");
+    verificationTokens[token] = { email: req.body.email, expires: Date.now() + 3600000 }; // 1 hour
+
+    try {
+      await mailService.sendVerificationEmail(req.body.email, token);
+      res.status(201).send({ message: "User was registered successfully! Please check your email to verify your account." });
+    } catch (mailErr) {
+      console.error("Failed to send verification email:", mailErr);
+      res.status(201).send({ message: "User registered, but failed to send verification email." });
+    }
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -43,6 +54,10 @@ exports.login = (req, res) => {
   })
     .then(user => {
       if (!user) return res.status(404).send({ message: "User Not found." });
+
+      if (user.account_status === "Unverified") {
+        return res.status(403).send({ message: "Please verify your email first!" });
+      }
 
       const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
       if (!passwordIsValid) {
@@ -68,6 +83,55 @@ exports.login = (req, res) => {
 
 exports.logout = (req, res) => {
   res.status(200).send({ message: "You have been signed out!" });
+};
+
+exports.verifyEmail = async (req, res) => {
+  const { email, token } = req.query;
+  if (!email || !token) return res.status(400).send({ message: "Missing parameters" });
+
+  const storedToken = verificationTokens[token];
+  if (!storedToken || storedToken.email !== email || storedToken.expires < Date.now()) {
+    return res.status(400).send({ message: "Invalid or expired token" });
+  }
+
+  const user = await User.findOne({ where: { email } });
+  if (!user) return res.status(404).send({ message: "User not found" });
+
+  user.account_status = "Active";
+  await user.save();
+
+  delete verificationTokens[token];
+  res.status(200).send({ message: "Email verified successfully" });
+};
+
+exports.resendVerificationEmail = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).send({ message: "Email or username is required" });
+
+  const user = await User.findOne({
+    where: {
+      [Op.or]: [
+        { username: email },
+        { email: email }
+      ]
+    }
+  });
+  if (!user) return res.status(404).send({ message: "User not found" });
+
+  if (user.account_status !== "Unverified") {
+    return res.status(400).send({ message: "Account is already verified or not pending verification" });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  verificationTokens[token] = { email: user.email, expires: Date.now() + 3600000 }; // 1 hour
+
+  try {
+    await mailService.sendVerificationEmail(user.email, token);
+    res.status(200).send({ message: "Verification email resent successfully" });
+  } catch (err) {
+    console.error("Failed to resend verification email:", err);
+    res.status(500).send({ message: "Failed to resend verification email" });
+  }
 };
 
 exports.recoverPassword = async (req, res) => {

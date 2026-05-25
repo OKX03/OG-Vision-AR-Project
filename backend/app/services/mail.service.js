@@ -43,6 +43,21 @@ exports.sendResetEmail = async (email, token) => {
   });
 };
 
+exports.sendVerificationEmail = async (email, token) => {
+  const verifyLink = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+
+  return transporter.sendMail({
+    from: `"OG Vision" <${process.env.MAIL_USER}>`,
+    to: email,
+    subject: "Verify your email address",
+    html: `
+      <p>Welcome to OG Vision AR!</p>
+      <p>Please click <a href="${verifyLink}">here</a> to verify your email address and complete your registration.</p>
+      <p>This link expires in 1 hour.</p>
+    `,
+  });
+};
+
 exports.sendNewBookingEmail = async (booking) => {
     const adminEmails = await getAdminEmails();
 

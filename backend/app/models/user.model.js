@@ -30,7 +30,7 @@ module.exports = (sequelize, Sequelize) => {
     account_status: {
       type: Sequelize.STRING,
       allowNull: false,
-      defaultValue: "Active"
+      defaultValue: "Unverified"
     }
   }, {
     tableName: "user",

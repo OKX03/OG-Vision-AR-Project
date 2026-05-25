@@ -74,8 +74,34 @@ export const userService = {
     return res.data;
   },
 
+  async verifyEmail(email: string, token: string) {
+    const res = await authAxios.get(`verify-email?email=${encodeURIComponent(email)}&token=${token}`);
+    return res.data;
+  },
+
+  async resendVerificationEmail(email: string) {
+    const res = await authAxios.post("resend-verification", { email });
+    return res.data;
+  },
+
   async logout() {
     this.clearLogoutTimer();
+
+    if (typeof window !== "undefined") {
+      const activeSession = sessionStorage.getItem('og_chat_session');
+      if (activeSession) {
+        const token = this.getToken();
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+        if (token) {
+          fetch(`${baseUrl}/api/chatbot/session/${activeSession}/end`, {
+            method: 'PUT',
+            headers: { 'x-access-token': token },
+            keepalive: true
+          }).catch(() => {});
+        }
+        sessionStorage.removeItem('og_chat_session');
+      }
+    }
 
     try {
       await authAxios.post("logout");

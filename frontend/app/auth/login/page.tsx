@@ -12,6 +12,9 @@ export default function LoginPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendStatus, setResendStatus] = useState("");
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     // If user is already logged in, redirect to appropriate home page
@@ -48,6 +51,8 @@ export default function LoginPage() {
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
+    setShowResend(false);
+    setResendStatus("");
 
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -67,6 +72,10 @@ export default function LoginPage() {
     } catch (err: any) {
         console.log("Login error:", err);
         const msg = err.response?.data?.message || "Login failed";
+
+        if (err.response?.status === 403 && msg.includes("verify your email")) {
+          setShowResend(true);
+        }
 
         const newErrors: { username?: string; password?: string } = {};
 
@@ -147,6 +156,31 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
+
+          {showResend && (
+            <div className="mt-3 text-center p-3 bg-light rounded border">
+              <p className="small mb-2 text-danger">Your email is not verified.</p>
+              <button 
+                className="btn btn-resend btn-sm w-100"
+                onClick={async () => {
+                  setIsResending(true);
+                  setResendStatus("Sending...");
+                  try {
+                    await userService.resendVerificationEmail(loginForm.username);
+                    setResendStatus("Verification email sent! Please check your inbox.");
+                  } catch (err: any) {
+                    setResendStatus(err.response?.data?.message || "Failed to resend.");
+                  } finally {
+                    setIsResending(false);
+                  }
+                }}
+                disabled={isResending}
+              >
+                {isResending ? "Resending..." : "Resend Verification Email"}
+              </button>
+              {resendStatus && <div className={`small mt-2 ${resendStatus.includes("sent") ? "text-success" : "text-danger"}`}>{resendStatus}</div>}
+            </div>
+          )}
 
           <div className="auth-link mt-3">
             Don't have an account? <a href="/auth/register">Register</a>

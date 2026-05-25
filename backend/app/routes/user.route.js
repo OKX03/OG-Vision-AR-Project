@@ -20,6 +20,16 @@ module.exports = function(app) {
     user.logout
   );
 
+  router.get(
+    "/verify-email", 
+    user.verifyEmail
+  );
+
+  router.post(
+    "/resend-verification",
+    user.resendVerificationEmail
+  );
+
   router.post(
     "/recover-password", 
     user.recoverPassword

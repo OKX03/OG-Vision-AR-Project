@@ -4,7 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { userService } from "@/services/user.service";
 import { Modal, Button } from "react-bootstrap";
 
-export default function ResetPasswordPage() {
+import { Suspense } from "react";
+
+function ResetPasswordForm() {
   const router = useRouter();
   const params = useSearchParams();
   const email = params.get("email") || "";
@@ -155,5 +157,13 @@ export default function ResetPasswordPage() {
         </Modal.Body>
       </Modal>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
