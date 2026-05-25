@@ -119,18 +119,42 @@ export default function VirtualTryOnApp() {
   const params = useSearchParams();
   const productId = params.get("product_id");
 
-  const [appStage, setAppStage] = useState<"SCANNING" | "TRY_ON">("SCANNING");
+  const [appStage, setAppStage] = useState<"SCANNING" | "TRY_ON">(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("vto_appStage");
+      if (saved === "SCANNING" || saved === "TRY_ON") return saved;
+    }
+    return "SCANNING";
+  });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [tryOnMode, setTryOnMode] = useState<"realtime" | "photo">("realtime");
+  const [tryOnMode, setTryOnMode] = useState<"realtime" | "photo">(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("vto_tryOnMode");
+      if (saved === "realtime" || saved === "photo") return saved;
+    }
+    return "realtime";
+  });
 
   const [uploadSessionId, setUploadSessionId] = useState<number>(0);
 
   const [arModel, setArModel] = useState<ort.InferenceSession | null>(null);
   
-  const [liveFaceShape, setLiveFaceShape] = useState<string | null>(null);
-  const [liveFaceProb, setLiveFaceProb] = useState<number | null>(null);
-  const [photoFaceShape, setPhotoFaceShape] = useState<string | null>(null);
-  const [photoFaceProb, setPhotoFaceProb] = useState<number | null>(null);
+  const [liveFaceShape, setLiveFaceShape] = useState<string | null>(() => typeof window !== "undefined" ? sessionStorage.getItem("vto_liveFaceShape") : null);
+  const [liveFaceProb, setLiveFaceProb] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("vto_liveFaceProb");
+      return saved ? parseFloat(saved) : null;
+    }
+    return null;
+  });
+  const [photoFaceShape, setPhotoFaceShape] = useState<string | null>(() => typeof window !== "undefined" ? sessionStorage.getItem("vto_photoFaceShape") : null);
+  const [photoFaceProb, setPhotoFaceProb] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("vto_photoFaceProb");
+      return saved ? parseFloat(saved) : null;
+    }
+    return null;
+  });
 
   const activeShape = tryOnMode === "photo" ? photoFaceShape : liveFaceShape;
   const activeProb = tryOnMode === "photo" ? photoFaceProb : liveFaceProb;
@@ -143,7 +167,19 @@ export default function VirtualTryOnApp() {
   const [isFaceAligned, setIsFaceAligned] = useState(false);
   const [alignHint, setAlignHint] = useState("Move into frame");
   const [cameraAvailable, setCameraAvailable] = useState(true);
-  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(() => typeof window !== "undefined" ? sessionStorage.getItem("vto_uploadedPhoto") : null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("vto_appStage", appStage);
+      sessionStorage.setItem("vto_tryOnMode", tryOnMode);
+      if (liveFaceShape) sessionStorage.setItem("vto_liveFaceShape", liveFaceShape); else sessionStorage.removeItem("vto_liveFaceShape");
+      if (liveFaceProb !== null) sessionStorage.setItem("vto_liveFaceProb", liveFaceProb.toString()); else sessionStorage.removeItem("vto_liveFaceProb");
+      if (photoFaceShape) sessionStorage.setItem("vto_photoFaceShape", photoFaceShape); else sessionStorage.removeItem("vto_photoFaceShape");
+      if (photoFaceProb !== null) sessionStorage.setItem("vto_photoFaceProb", photoFaceProb.toString()); else sessionStorage.removeItem("vto_photoFaceProb");
+      if (uploadedPhoto) sessionStorage.setItem("vto_uploadedPhoto", uploadedPhoto); else sessionStorage.removeItem("vto_uploadedPhoto");
+    }
+  }, [appStage, tryOnMode, liveFaceShape, liveFaceProb, photoFaceShape, photoFaceProb, uploadedPhoto]);
   
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -180,8 +216,10 @@ export default function VirtualTryOnApp() {
     isMountedRef.current = true;
 
     async function init() {
-      await faceServiceRef.current.init("VIDEO");
-      startCamera();
+      if (appStageRef.current === "SCANNING") {
+        await faceServiceRef.current.init("VIDEO");
+        startCamera();
+      }
 
       try {
         ort.env.wasm.numThreads = 1;
