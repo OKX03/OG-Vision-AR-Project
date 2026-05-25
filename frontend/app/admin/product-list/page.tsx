@@ -4,8 +4,9 @@ import React, { useEffect, useState } from "react";
 import { productService } from "@/services/product.service";
 import { Product } from "@/types/product";
 import namer from "color-namer";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Offcanvas } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import "@/app/customer/product-list/product-list.css";
 
 export default function ProductListPage() {
   const router = useRouter();
@@ -15,8 +16,26 @@ export default function ProductListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
+  const [selectedShapes, setSelectedShapes] = useState<string[]>([]);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [selectedFaceShapes, setSelectedFaceShapes] = useState<string[]>([]);
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(2000);
+
+  const [brands, setBrands] = useState<string[]>([]);
+  const sizes = ["S", "M", "L", "XL"];
+  const genders = ["Men", "Women", "Unisex"];
+  const shapes = ["Square", "Rectangle", "Round", "Browline", "Wayfarer"];
+  const materials = ["Metal", "Plastic", "Acetate"];
+  const faceShapes = ["Oval", "Round", "Square", "Heart", 'Oblong'];
+
+
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   useEffect(() => {
@@ -55,6 +74,7 @@ export default function ProductListPage() {
       });
       setProducts(data);
       setFilteredProducts(data);
+      setBrands([...new Set(data.map((p: Product) => p.brand).filter(Boolean))] as string[]);
       console.log("Processed products:", data);
     } catch (err) {
       console.error(err);
@@ -64,15 +84,78 @@ export default function ProductListPage() {
     }
   };
 
-  const applyFilter = (keyword: string) => {
-    setSearchText(keyword);
-    const filtered = products.filter(
-      (p) =>
-        p.brand?.toLowerCase().includes(keyword.toLowerCase()) ||
-        p.model?.toLowerCase().includes(keyword.toLowerCase())
-    );
-    setFilteredProducts(filtered);
+  const applyFilter = () => {
+    let list = products.filter((p) => {
+      return (
+        (searchText === "" ||
+          p.brand?.toLowerCase().includes(searchText.toLowerCase()) ||
+          p.model?.toLowerCase().includes(searchText.toLowerCase())) &&
+        (selectedBrands.length === 0 || selectedBrands.includes(p.brand!)) &&
+        (selectedSizes.length === 0 || selectedSizes.includes(p.frameSize!)) &&
+        (selectedGenders.length === 0 || selectedGenders.includes(p.gender!)) &&
+        (selectedShapes.length === 0 || selectedShapes.includes(p.frameShape!)) &&
+        (selectedMaterials.length === 0 || selectedMaterials.includes(p.frameMaterial!)) &&
+        (selectedFaceShapes.length === 0 || p.faceShape?.some((s) => selectedFaceShapes.includes(s))) &&
+        (p.price! >= minPrice) &&
+        (p.price! <= maxPrice)
+      );
+    });
+    setFilteredProducts(list);
     setCurrentPage(1);
+  };
+
+  useEffect(() => {
+    if (products.length > 0) {
+      applyFilter();
+    }
+  }, [
+    searchText,
+    selectedBrands,
+    selectedSizes,
+    selectedGenders,
+    selectedShapes,
+    selectedMaterials,
+    selectedFaceShapes,
+    minPrice,
+    maxPrice,
+    products
+  ]);
+
+  const toggle = (value: string, list: string[], setList: (v: string[]) => void, checked: boolean) => {
+    let updated = [...list];
+    if (checked) updated.push(value);
+    else updated = updated.filter((v) => v !== value);
+    setList(updated);
+  };
+
+  const clearFilters = () => {
+    setSelectedBrands([]);
+    setSelectedSizes([]);
+    setSelectedGenders([]);
+    setSelectedShapes([]);
+    setSelectedMaterials([]);
+    setSelectedFaceShapes([]);
+    setSearchText("");
+    setMinPrice(0);
+    setMaxPrice(2000);
+  };
+
+  const activeFilterTags = [
+    ...selectedBrands,
+    ...selectedSizes,
+    ...selectedGenders,
+    ...selectedShapes,
+    ...selectedMaterials,
+    ...selectedFaceShapes,
+  ];
+
+  const removeFilterTag = (tag: string) => {
+    setSelectedBrands((b) => b.filter((v) => v !== tag));
+    setSelectedSizes((b) => b.filter((v) => v !== tag));
+    setSelectedGenders((b) => b.filter((v) => v !== tag));
+    setSelectedShapes((b) => b.filter((v) => v !== tag));
+    setSelectedMaterials((b) => b.filter((v) => v !== tag));
+    setSelectedFaceShapes((b) => b.filter((v) => v !== tag));
   };
 
   const confirmDelete = async () => {
@@ -105,25 +188,89 @@ export default function ProductListPage() {
           <div className="row">
             <div className="col d-flex justify-content-between align-items-center">
 
-              <div className="input-group ms-2 me-3" style={{ maxWidth: "300px" }}>
-                <span className="input-group-text">
-                  <i className="bi bi-search"></i>
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search by brand or model..."
-                  value={searchText}
-                  onChange={(e) => applyFilter(e.target.value)}
-                />
+              <div className="d-flex align-items-center ms-2 me-3 flex-grow-1" style={{ maxWidth: "500px" }}>
+                <div className="input-group">
+                  <span className="input-group-text">
+                    <i className="bi bi-search"></i>
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search by brand or model..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                  />
+                </div>
+                
+                <button
+                  className="btn btn-outline-secondary ms-2 text-nowrap"
+                  type="button"
+                  onClick={() => setShowFilter(true)}
+                >
+                  <i className="bi bi-funnel"></i> Filter
+                  {activeFilterTags.length > 0 && (
+                    <span className="badge bg-secondary ms-1">{activeFilterTags.length}</span>
+                  )}
+                </button>
               </div>
 
-              <Button className="me-2" variant="primary" size="sm" onClick={() => router.push("/admin/add-product")}>
+              <Button className="me-2 text-nowrap" variant="primary" size="sm" onClick={() => router.push("/admin/add-product")}>
                 <i className="bi bi-plus-lg me-1"></i> Add Product
               </Button>
             </div>
           </div>
+
+          {activeFilterTags.length > 0 && (
+            <div className="row mt-3 ms-1">
+              <div className="col">
+                {activeFilterTags.map((tag) => (
+                  <span key={tag} className="badge bg-light text-dark border me-2 mb-2" style={{ cursor: "pointer" }} onClick={() => removeFilterTag(tag)}>
+                    {tag} <i className="bi bi-x ms-1"></i>
+                  </span>
+                ))}
+                <span className="badge bg-white text-danger border border-danger ms-1 mb-2" style={{ cursor: "pointer" }} onClick={clearFilters}>
+                  Clear All
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Offcanvas Filter */}
+        <Offcanvas show={showFilter} onHide={() => setShowFilter(false)} placement="end">
+          <Offcanvas.Header closeButton className="border-bottom">
+            <Offcanvas.Title className="fw-bold">Filters</Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body>
+            <Filters
+              brands={brands}
+              sizes={sizes}
+              genders={genders}
+              shapes={shapes}
+              materials={materials}
+              faceShapes={faceShapes}
+              selectedBrands={selectedBrands}
+              selectedSizes={selectedSizes}
+              selectedGenders={selectedGenders}
+              selectedShapes={selectedShapes}
+              selectedMaterials={selectedMaterials}
+              selectedFaceShapes={selectedFaceShapes}
+              toggle={toggle}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              setMinPrice={setMinPrice}
+              setMaxPrice={setMaxPrice}
+              applyFilter={applyFilter}
+              setSelectedBrands={setSelectedBrands}
+              setSelectedSizes={setSelectedSizes}
+              setSelectedGenders={setSelectedGenders}
+              setSelectedShapes={setSelectedShapes}
+              setSelectedMaterials={setSelectedMaterials}
+              setSelectedFaceShapes={setSelectedFaceShapes}
+            />
+            <button className="btn btn-outline-secondary w-100 mt-3 mb-4" onClick={clearFilters}>Clear All Filters</button>
+          </Offcanvas.Body>
+        </Offcanvas>
 
         {/* Table */}
         <div className="table-responsive">
@@ -281,3 +428,149 @@ export default function ProductListPage() {
     </div>
   );
 }
+
+const Filters = ({
+  brands, sizes, genders, shapes, materials, faceShapes,
+  selectedBrands, selectedSizes, selectedGenders, selectedShapes, selectedMaterials, selectedFaceShapes,
+  toggle, minPrice, maxPrice, setMinPrice, setMaxPrice, applyFilter,
+  setSelectedBrands, setSelectedSizes, setSelectedGenders, setSelectedShapes, setSelectedMaterials, setSelectedFaceShapes
+}: any) => {
+  return (
+    <>
+      <div className="mb-4">
+        <h6 className="fw-semibold">Gender</h6>
+        {genders.map((g: string) => (
+          <div key={g} className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={selectedGenders.includes(g)}
+              onChange={(e) => toggle(g, selectedGenders, setSelectedGenders, e.target.checked)}
+            />
+            <label className="form-check-label">{g}</label>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4">
+        <h6 className="fw-semibold">Brand</h6>
+        {brands.map((b: string) => (
+          <div key={b} className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={selectedBrands.includes(b)}
+              onChange={(e) => toggle(b, selectedBrands, setSelectedBrands, e.target.checked)}
+            />
+            <label className="form-check-label">{b}</label>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4">
+        <h6 className="fw-semibold">Price (RM {minPrice} - RM {maxPrice})</h6>
+        <input
+          type="range"
+          className="form-range"
+          min={0}
+          max={2000}
+          step={50}
+          value={maxPrice}
+          onChange={(e) => { setMaxPrice(Number(e.target.value)); applyFilter(); }}
+        />
+        <div className="d-flex gap-2 mt-2">
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={minPrice}
+            onChange={(e) => { setMinPrice(Number(e.target.value)); applyFilter(); }}
+          />
+          <input
+            type="number"
+            className="form-control form-control-sm"
+            value={maxPrice}
+            onChange={(e) => { setMaxPrice(Number(e.target.value)); applyFilter(); }}
+          />
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <div className="d-flex align-items-center mb-2">
+          <h6 className="fw-semibold mb-0">Frame Size</h6>
+
+          <div className="custom-tooltip-container ms-2">
+            <i
+              className="bi bi-question-circle text-muted"
+              style={{ cursor: "help", fontSize: "0.9rem" }}
+            ></i>
+
+            <div className="custom-tooltip-content shadow-sm">
+              <div className="fw-bold mb-1 border-bottom pb-1">Lens Width:</div>
+              <div className="d-flex justify-content-between"><span>S (Small):</span> <span>&lt; 49mm</span></div>
+              <div className="d-flex justify-content-between"><span>M (Medium):</span> <span>49 - 54mm</span></div>
+              <div className="d-flex justify-content-between"><span>L (Large):</span> <span>55 - 58mm</span></div>
+              <div className="d-flex justify-content-between"><span>XL (Extra Large):</span> <span>&gt; 58mm</span></div>
+            </div>
+          </div>
+        </div>
+
+        {sizes.map((s: string) => (
+          <div key={s} className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={selectedSizes.includes(s)}
+              onChange={(e) => toggle(s, selectedSizes, setSelectedSizes, e.target.checked)}
+            />
+            <label className="form-check-label">{s}</label>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4">
+        <h6 className="fw-semibold">Frame Shape</h6>
+        {shapes.map((s: string) => (
+          <div key={s} className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={selectedShapes.includes(s)}
+              onChange={(e) => toggle(s, selectedShapes, setSelectedShapes, e.target.checked)}
+            />
+            <label className="form-check-label">{s}</label>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4">
+        <h6 className="fw-semibold">Material</h6>
+        {materials.map((m: string) => (
+          <div key={m} className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={selectedMaterials.includes(m)}
+              onChange={(e) => toggle(m, selectedMaterials, setSelectedMaterials, e.target.checked)}
+            />
+            <label className="form-check-label">{m}</label>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4">
+        <h6 className="fw-semibold">Face Shape</h6>
+        {faceShapes.map((f: string) => (
+          <div key={f} className="form-check">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={selectedFaceShapes.includes(f)}
+              onChange={(e) => toggle(f, selectedFaceShapes, setSelectedFaceShapes, e.target.checked)}
+            />
+            <label className="form-check-label">{f}</label>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};

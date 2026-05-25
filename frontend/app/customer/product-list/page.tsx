@@ -7,7 +7,7 @@ import namer from "color-namer";
 import { useRouter } from 'next/navigation';
 import "./product-list.css";
 
-export default function ProductsPage() {
+export default function ProductListPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
