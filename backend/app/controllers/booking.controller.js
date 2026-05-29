@@ -130,15 +130,29 @@ exports.updateBooking = async (req, res) => {
         );
       }
     }
-    if (data.status === "Rejected" && oldStatus !== "Rejected") {
+
+    const statusesRequiringEmail = ["Rejected", "Cancelled", "Completed", "No Show"];
+    if (statusesRequiringEmail.includes(data.status) && oldStatus !== data.status) {
       const bookingWithDetails = await Booking.findByPk(id, {
         include: [
           { model: db.user, as: "user" },
           { model: db.product, as: "product" }
         ]
       });
-      mailService.sendBookingRejectedEmail(bookingWithDetails, data.rejection_reason)
-        .catch(err => console.error("Reject email error:", err));
+
+      if (data.status === "Rejected") {
+        mailService.sendBookingRejectedEmail(bookingWithDetails, data.rejection_reason)
+          .catch(err => console.error("Reject email error:", err));
+      } else if (data.status === "Cancelled") {
+        mailService.sendBookingCancelEmail(bookingWithDetails)
+          .catch(err => console.error("Cancel admin email error:", err));
+      } else if (data.status === "Completed") {
+        mailService.sendBookingCompletedEmail(bookingWithDetails)
+          .catch(err => console.error("Completed email error:", err));
+      } else if (data.status === "No Show") {
+        mailService.sendBookingNoShowEmail(bookingWithDetails)
+          .catch(err => console.error("No show email error:", err));
+      }
     }
 
     return res.json(booking);
