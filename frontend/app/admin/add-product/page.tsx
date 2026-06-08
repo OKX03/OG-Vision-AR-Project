@@ -37,6 +37,7 @@ export default function AddProductPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showFileError, setShowFileError] = useState(false);
 
   const faceShapeOptions = ['Oval', 'Round', 'Square', 'Heart', 'Oblong'];
 
@@ -71,6 +72,13 @@ export default function AddProductPage() {
     if (!e.target.files?.length) return;
 
     const file = e.target.files[0];
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    
+    if (!validTypes.includes(file.type)) {
+      setShowFileError(true);
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
 
@@ -308,7 +316,7 @@ export default function AddProductPage() {
                 type="number"
                 className={`form-control ${errors.lensWidth ? 'is-invalid' : ''}`}
                 value={newProduct.lensWidth}
-                onChange={e => handleChange('lensWidth', Number(e.target.value))}
+                onChange={e => handleChange('lensWidth', e.target.value === '' ? '' : Number(e.target.value))}
               />
               <div className="invalid-feedback">{errors.lensWidth}</div>
             </div>
@@ -318,7 +326,7 @@ export default function AddProductPage() {
                 type="number"
                 className={`form-control ${errors.lensHeight ? 'is-invalid' : ''}`}
                 value={newProduct.lensHeight}
-                onChange={e => handleChange('lensHeight', Number(e.target.value))}
+                onChange={e => handleChange('lensHeight', e.target.value === '' ? '' : Number(e.target.value))}
               />
               <div className="invalid-feedback">{errors.lensHeight}</div>
             </div>
@@ -328,7 +336,7 @@ export default function AddProductPage() {
                 type="number"
                 className={`form-control ${errors.bridgeWidth ? 'is-invalid' : ''}`}
                 value={newProduct.bridgeWidth}
-                onChange={e => handleChange('bridgeWidth', Number(e.target.value))}
+                onChange={e => handleChange('bridgeWidth', e.target.value === '' ? '' : Number(e.target.value))}
               />
               <div className="invalid-feedback">{errors.bridgeWidth}</div>
             </div>
@@ -338,7 +346,7 @@ export default function AddProductPage() {
                 type="number"
                 className={`form-control ${errors.templeLength ? 'is-invalid' : ''}`}
                 value={newProduct.templeLength}
-                onChange={e => handleChange('templeLength', Number(e.target.value))}
+                onChange={e => handleChange('templeLength', e.target.value === '' ? '' : Number(e.target.value))}
               />
               <div className="invalid-feedback">{errors.templeLength}</div>
             </div>
@@ -418,7 +426,7 @@ export default function AddProductPage() {
                 type="number"
                 className={`form-control ${errors.quantity ? 'is-invalid' : ''}`}
                 value={newProduct.quantity}
-                onChange={e => handleChange('quantity', e.target.value)}
+                onChange={e => handleChange('quantity', e.target.value === '' ? '' : Number(e.target.value))}
                 min={0}
               />
               <div className="invalid-feedback">{errors.quantity}</div>
@@ -430,7 +438,7 @@ export default function AddProductPage() {
               Cancel
             </button>
             <button className="btn btn-success fw-bold" onClick={onSubmit}>
-              Add Product
+              Save
             </button>
           </div>
         </div>
@@ -458,6 +466,19 @@ export default function AddProductPage() {
           <p className="text-muted">Please update the missing fields.</p>
           <Button variant="danger" onClick={() => setShowIncomplete(false)}>
             Okay
+          </Button>
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showFileError} centered onHide={() => setShowFileError(false)}>
+        <Modal.Body className="text-center p-4">
+          <div className="text-danger mb-3">
+            <i className="bi bi-file-earmark-x" style={{ fontSize: "3rem" }}></i>
+          </div>
+          <h5>Invalid File Format!</h5>
+          <p className="text-muted">Only <strong>.jpg, .jpeg,</strong> and <strong>.png</strong> files are supported for product images.</p>
+          <Button variant="danger" className="px-4" onClick={() => setShowFileError(false)}>
+            Close
           </Button>
         </Modal.Body>
       </Modal>

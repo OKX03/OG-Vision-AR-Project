@@ -41,6 +41,7 @@ export default function EditProductPage() {
   const [showIncomplete, setShowIncomplete] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showFileError, setShowFileError] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -124,6 +125,13 @@ export default function EditProductPage() {
     if (e.target.files?.length === 0) return;
 
     const file = e.target.files![0];
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    
+    if (!validTypes.includes(file.type)) {
+      setShowFileError(true);
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
 
@@ -358,7 +366,7 @@ export default function EditProductPage() {
             </div>
           </div>
 
-          {/* SIZE / DIMENSIONS */}
+          {/* SIZE */}
           <h5 className="mb-3 text-secondary fw-semibold">Frame Size (mm)</h5>
           <div className="row g-3 mb-4 bg-light p-3 rounded border">
             {/* Lens Width */}
@@ -369,7 +377,7 @@ export default function EditProductPage() {
                 className={`form-control ${errors.lensWidth ? 'is-invalid' : ''}`}
                 value={newProduct.lensWidth || ''}
                 min={1}
-                onChange={(e) => handleChange('lensWidth', Number(e.target.value))}
+                onChange={(e) => handleChange('lensWidth', e.target.value === '' ? '' : Number(e.target.value))}
               />
               {errors.lensWidth && <div className="invalid-feedback">{errors.lensWidth}</div>}
             </div>
@@ -382,7 +390,7 @@ export default function EditProductPage() {
                 className={`form-control ${errors.lensHeight ? 'is-invalid' : ''}`}
                 value={newProduct.lensHeight || ''}
                 min={1}
-                onChange={(e) => handleChange('lensHeight', Number(e.target.value))}
+                onChange={(e) => handleChange('lensHeight', e.target.value === '' ? '' : Number(e.target.value))}
               />
               {errors.lensHeight && <div className="invalid-feedback">{errors.lensHeight}</div>}
             </div>
@@ -395,7 +403,7 @@ export default function EditProductPage() {
                 className={`form-control ${errors.bridgeWidth ? 'is-invalid' : ''}`}
                 value={newProduct.bridgeWidth || ''}
                 min={1}
-                onChange={(e) => handleChange('bridgeWidth', Number(e.target.value))}
+                onChange={(e) => handleChange('bridgeWidth', e.target.value === '' ? '' : Number(e.target.value))}
               />
               {errors.bridgeWidth && <div className="invalid-feedback">{errors.bridgeWidth}</div>}
             </div>
@@ -408,7 +416,7 @@ export default function EditProductPage() {
                 className={`form-control ${errors.templeLength ? 'is-invalid' : ''}`}
                 value={newProduct.templeLength || ''}
                 min={1}
-                onChange={(e) => handleChange('templeLength', Number(e.target.value))}
+                onChange={(e) => handleChange('templeLength', e.target.value === '' ? '' : Number(e.target.value))}
               />
               {errors.templeLength && <div className="invalid-feedback">{errors.templeLength}</div>}
             </div>
@@ -464,7 +472,7 @@ export default function EditProductPage() {
                 type="number"
                 className={`form-control ${errors.quantity ? 'is-invalid' : ''}`}
                 value={newProduct.quantity}
-                onChange={e => handleChange('quantity', Number(e.target.value))}
+                onChange={e => handleChange('quantity', e.target.value === '' ? '' : Number(e.target.value))}
                 min={0}
               />
               <div className="invalid-feedback">{errors.quantity}</div>
@@ -472,11 +480,11 @@ export default function EditProductPage() {
           </div>
 
           <div className="d-flex justify-content-end gap-3">
-            <button className="btn btn-light" onClick={() => router.back()}>
+            <button className="btn btn-danger" onClick={() => router.back()}>
               Cancel
             </button>
-            <button className="btn btn-primary fw-bold" onClick={handleSubmit}>
-              Update Product
+            <button className="btn btn-success fw-bold" onClick={handleSubmit}>
+              Save
             </button>
           </div>
         </div>
@@ -505,6 +513,19 @@ export default function EditProductPage() {
           <p className="text-muted">Please update the missing fields.</p>
           <Button variant="danger" onClick={() => setShowIncomplete(false)}>
             Okay
+          </Button>
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showFileError} centered onHide={() => setShowFileError(false)}>
+        <Modal.Body className="text-center p-4">
+          <div className="text-danger mb-3">
+            <i className="bi bi-file-earmark-x" style={{ fontSize: "3rem" }}></i>
+          </div>
+          <h5>Invalid File Format!</h5>
+          <p className="text-muted">Only <strong>.jpg, .jpeg,</strong> and <strong>.png</strong> files are supported for product images.</p>
+          <Button variant="danger" className="px-4" onClick={() => setShowFileError(false)}>
+            Close
           </Button>
         </Modal.Body>
       </Modal>
