@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { chatbotService } from '@/services/chatbot.service';
 import { userService } from '@/services/user.service';
 import './chat-bot.css';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Message {
   message_id?: number;
@@ -20,6 +20,7 @@ export default function ChatbotPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
   const sessionIdRef = useRef<number | null>(null);
+  const router = useRouter(); 
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -45,8 +46,6 @@ export default function ChatbotPage() {
     
     return () => {
       window.removeEventListener('beforeunload', endChatSession);
-      endChatSession();
-      sessionStorage.removeItem('og_chat_session');
     };
   }, []);
 
@@ -134,15 +133,44 @@ export default function ChatbotPage() {
             <span dangerouslySetInnerHTML={{ __html: formattedText }} />
             <div className="product-recommendation-cards mt-3 d-flex flex-column gap-2">
               {products.map((p: any) => (
-                <Link key={p.product_id} href={`/customer/product-details/${p.product_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div className="chat-product-card d-flex align-items-center">
+                <div 
+                  key={p.product_id} 
+                  onClick={() => router.push(`/customer/product-details/${p.product_id}`)} 
+                  style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                >
+                  <div className="chat-product-card d-flex align-items-center gap-3">
+                    {p.image_url && (
+                      <div className="flex-shrink-0 bg-light rounded d-flex justify-content-center align-items-center" style={{ width: '70px', height: '70px' }}>
+                        <img 
+                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${p.image_url}`} 
+                          alt={p.model}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        />
+                      </div>
+                    )}
                     <div className="flex-grow-1">
                       <h6 className="fw-bold mb-1 text-dark">{p.brand} - {p.model}</h6>
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        <span className="text-muted" style={{ fontSize: '0.85rem' }}>Color:</span>
+                        <div className="d-flex align-items-center gap-1">
+                          <span
+                            style={{ 
+                              backgroundColor: p.color_hex, 
+                              width: '12px', 
+                              height: '12px', 
+                              borderRadius: '50%',
+                              display: 'inline-block',
+                              border: '1px solid #dee2e6'
+                            }}
+                          ></span>
+                          <span style={{ fontSize: '0.85rem' }}>{p.color_name}</span>
+                        </div>
+                      </div>
                       <div className="text-success fw-bold">RM {p.price}</div>
                     </div>
                     <i className="bi bi-chevron-right text-secondary fs-5"></i>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </>
@@ -159,10 +187,10 @@ export default function ChatbotPage() {
   return (
     <div className="container py-4 mb-5 chatbot-page-container">
       <div className="d-flex align-items-center mb-4">
-        <Link href="/customer/customer-service" className="btn btn-outline-secondary me-3 rounded-circle" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <i className="bi bi-arrow-left"></i>
-        </Link>
-        <h2 className="fw-bold mb-0">AI Assistant</h2>
+          <button className="btn btn-dark" onClick={() => router.back()}>
+            <i className="bi bi-arrow-left"></i>
+          </button>
+        <h2 className="fw-bold ms-2 mb-0">AI Assistant</h2>
       </div>
 
       <div className="chatbot-window shadow-sm">

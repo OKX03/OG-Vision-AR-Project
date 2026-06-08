@@ -11,7 +11,7 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false
     },
     sender: {
-      type: Sequelize.ENUM('user', 'model', 'function'),
+      type: Sequelize.STRING,
       allowNull: false
     },
     content: {
