@@ -352,14 +352,14 @@ export default function ProductListPage() {
                         <div
                           className="d-flex align-items-center text-success cursor-pointer"
                           style={{ cursor: "pointer" }}
-                          onClick={() => router.push(`/admin/upload-ar/${p.product_id}`)}
+                          onClick={() => router.push(`/admin/manage-ar/${p.product_id}`)}
                         >
                           <i className="bi bi-file-earmark-code me-2"></i>
                           <span className="fw-semibold small">Model Ready</span>
                         </div>
                       </div>
                     ) : (
-                      <Button variant="outline-secondary" size="sm" onClick={() => router.push(`/admin/upload-ar/${p.product_id}`)}>
+                      <Button variant="outline-secondary" size="sm" onClick={() => router.push(`/admin/manage-ar/${p.product_id}`)}>
                         Upload AR
                       </Button>
                     )}

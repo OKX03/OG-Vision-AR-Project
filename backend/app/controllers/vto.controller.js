@@ -33,8 +33,6 @@ exports.uploadModel = async (req, res) => {
         model.file_path.replace(/^\/+/, "")
       );
 
-      console.log("OLD PATH:", oldPath);
-
       await model.update({
         file_path: filePath
       });

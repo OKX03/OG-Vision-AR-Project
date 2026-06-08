@@ -6,9 +6,9 @@ import { Button, Modal } from "react-bootstrap";
 import * as THREE from "three";
 import { GLTFLoader, FBXLoader, OrbitControls } from "three-stdlib";
 import { VtoService } from "@/services/vto.service";
-import VirtualTryOn from "@/components/virtual-try-on";
+import VirtualTryOnCanvas from "@/components/virtual-try-on-canvas";
 
-export default function UploadArPage() {
+export default function ManageARPage() {
   const { id } = useParams();
   const router = useRouter();
 
@@ -123,7 +123,7 @@ export default function UploadArPage() {
   useEffect(() => {
     initThree();
     if (id) {
-      VtoService.getModelByProductId(id as string).then((model) => {
+      VtoService.getModelByProductId(id as string).then((model: any) => {
         if (model?.file_path) {
           setProductModel(model);
           loadModel(`${process.env.NEXT_PUBLIC_API_BASE_URL}${model.file_path}`);
@@ -274,9 +274,9 @@ export default function UploadArPage() {
             <>
               <hr className="my-4" />
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h6 className="fw-bold mb-0 text-secondary">AR Calibration Mode</h6>
-                <Button variant={showArCalibration ? "secondary" : "primary"} onClick={() => setShowArCalibration(!showArCalibration)}>
-                  {showArCalibration ? "Exit Calibration" : "Calibrate AR on Camera"}
+                <h6 className="fw-bold mb-0 text-secondary">AR Model Calibration</h6>
+                <Button variant={showArCalibration ? "danger" : "primary"} onClick={() => setShowArCalibration(!showArCalibration)}>
+                  {showArCalibration ? "Exit Calibration" : "Calibrate AR Model"}
                 </Button>
               </div>
 
@@ -289,7 +289,7 @@ export default function UploadArPage() {
                     </div>
                   </div>
                   <div className="border border-3 rounded-3 overflow-hidden position-relative shadow-sm" style={{ width: "100%", background: "#f8f9fa", borderColor: "#e9ecef" }}>
-                    <VirtualTryOn 
+                    <VirtualTryOnCanvas 
                       modelPath={`${process.env.NEXT_PUBLIC_API_BASE_URL}${productModel.file_path}`} 
                       isAdminMode={true}
                       initialCalibration={{
