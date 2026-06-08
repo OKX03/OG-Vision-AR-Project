@@ -44,7 +44,7 @@ exports.getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.findAll({
       include: [
-        { model: db.user, as: "user", attributes: ["user_id", "username", "email"] },
+        { model: db.user, as: "user", attributes: ["user_id", "username", "email", "phone_number"] },
         { model: db.product, as: "product", attributes: ["product_id", "brand", "model"] }
       ],
       order: [["booking_date", "ASC"]]
@@ -131,7 +131,7 @@ exports.updateBooking = async (req, res) => {
       }
     }
 
-    const statusesRequiringEmail = ["Rejected", "Cancelled", "Completed", "No Show"];
+    const statusesRequiringEmail = ["Accepted", "Rejected", "Cancelled", "Completed", "No Show"];
     if (statusesRequiringEmail.includes(data.status) && oldStatus !== data.status) {
       const bookingWithDetails = await Booking.findByPk(id, {
         include: [
@@ -140,7 +140,10 @@ exports.updateBooking = async (req, res) => {
         ]
       });
 
-      if (data.status === "Rejected") {
+      if (data.status === "Accepted") {
+        mailService.sendBookingAcceptedEmail(bookingWithDetails)
+          .catch(err => console.error("Accepted email error:", err));
+      } else if (data.status === "Rejected") {
         mailService.sendBookingRejectedEmail(bookingWithDetails, data.rejection_reason)
           .catch(err => console.error("Reject email error:", err));
       } else if (data.status === "Cancelled") {

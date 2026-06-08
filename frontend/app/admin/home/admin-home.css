@@ -65,7 +65,7 @@
 
 /* Card Themes */
 .dashboard-card.product .icon-bg { background-color: #22d3ee; } /* 青色 */
-.dashboard-card.vto .icon-bg { background-color: #3b82f6; }    /* 蓝色 */
+.dashboard-card.booking .icon-bg { background-color: #3b82f6; }    /* 蓝色 */
 .dashboard-card.faq .icon-bg { background-color: #f97316; }    /* 橙色 */
 
 .card-text h3 {

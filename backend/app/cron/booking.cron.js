@@ -124,7 +124,6 @@ cron.schedule("*/30 * * * *", async () => {
 
         if (now >= endDateTime) {
           booking.status = "Expired";
-          booking.expired_at = now; 
           await booking.save();
           expiredCount++;
         }

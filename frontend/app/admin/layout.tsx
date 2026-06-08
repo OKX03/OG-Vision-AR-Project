@@ -27,8 +27,12 @@ export default function AdminLayout({ children, title = "OG Vision AR" }: Props)
     setIsOpen(false);
   };
 
-  const checkActive = (path: string) => {
-    return pathname.includes(path) ? "active" : "";
+  const checkActive = (paths: string | string[]) => {
+    if (Array.isArray(paths)) {
+      return paths.some(path => pathname.includes(path)) ? "active" : "";
+    }
+
+    return pathname.includes(paths) ? "active" : "";
   };
 
   return (
@@ -63,25 +67,28 @@ export default function AdminLayout({ children, title = "OG Vision AR" }: Props)
           Home
         </div>
         <div 
-          className={`sidenav-item ${checkActive('/admin/product-list')}`} 
+          className={`sidenav-item ${checkActive([
+            '/admin/product-list', 
+            '/admin/add-product', 
+            '/admin/edit-product', 
+            '/admin/manage-ar'
+          ])}`} 
           onClick={() => navigateTo('/admin/product-list')}
         >
-          Product
-        </div>
-        <div 
-          className={`sidenav-item ${checkActive('/admin/virtual-try-on')}`} 
-          onClick={() => navigateTo('/admin/virtual-try-on')}
-        >
-          Virtual Try-On
+          Product Management
         </div>
         <div 
           className={`sidenav-item ${checkActive('/admin/booking-list')}`} 
           onClick={() => navigateTo('/admin/booking-list')}
         >
-          Booking
+          Booking Management
         </div> 
         <div 
-          className={`sidenav-item ${checkActive('/admin/faq-list')}`} 
+          className={`sidenav-item ${checkActive([
+            '/admin/faq-list',
+            '/admin/add-faq',
+            '/admin/edit-faq'
+          ])}`} 
           onClick={() => navigateTo('/admin/faq-list')}
         >
           FAQs Management

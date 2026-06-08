@@ -56,6 +56,17 @@ export default function ProfilePage() {
             />
           </div>
 
+          <div className="mb-3 text-start">
+            <label className="form-label text-muted small fw-bold">Phone Number</label>
+            <input 
+              className="form-control border-0 bg-light" 
+              style={{ padding: "12px", borderRadius: "8px" }} 
+              value={user.phone_number ? `+60 ${user.phone_number}` : ""} 
+              placeholder="Not provided"
+              disabled 
+            />
+          </div>
+
           <div className="mb-4 text-start">
             <label className="form-label text-muted small fw-bold">Gender</label>
             <div className="position-relative">
@@ -65,6 +76,30 @@ export default function ProfilePage() {
               value={user.gender || ""} 
               disabled 
             />
+            </div>
+          </div>
+
+          <div className="mb-4 text-start">
+            <label className="form-label text-muted small fw-bold">Face Shape</label>
+            <div className="position-relative">
+            {user.face_shape ? (
+              <input 
+                className="form-control border-0 bg-light text-capitalize" 
+                style={{ padding: "12px", borderRadius: "8px" }} 
+                value={user.face_shape} 
+                disabled 
+              />
+            ) : (
+              <div 
+                className="form-control border-0 bg-light d-flex align-items-center" 
+                style={{ padding: "12px", borderRadius: "8px" }}
+              >
+                <span className="text-muted me-2" style={{ fontSize: '14px' }}>Not detected</span>
+                <a href="/customer/virtual-try-on" style={{ textDecoration: 'none', color: '#4ebce3', fontWeight: '600', fontSize: '14px' }}>
+                  Let's get your face shape during virtual try-on
+                </a>
+              </div>
+            )}
             </div>
           </div>
 

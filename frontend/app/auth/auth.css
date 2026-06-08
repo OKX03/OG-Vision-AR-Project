@@ -161,3 +161,15 @@
     justify-content: center;
   }
 }
+
+.btn-resend {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  font-weight: 500;
+}
+
+.btn-resend:hover {
+  background-color: #4da3ff;
+  color: #fff;
+}

@@ -3,42 +3,35 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
 import * as ort from "onnxruntime-web";
-import axiosInstance from "@/services/axios-instance";
+import { productService } from "@/services/product.service";
 import namer from "color-namer";
 import { Modal, Button } from "react-bootstrap";
-
-import { FaceLandmarkerService } from "@/services/face-landmarker.service";
+import { FaceLandmarkerService, sharedFaceLandmarkerService } from "@/services/face-landmarker.service";
 import VirtualTryOnCanvas from "@/components/virtual-try-on-canvas";
+import { userService } from "@/services/user.service";
 import "./virtual-try-on.css";
 
-const isMobile = typeof window !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-const downscaleImage = (file: File, maxWidth: number = 800): Promise<string> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxWidth || height > maxWidth) {
-          if (width > height) { height = Math.round((height * maxWidth) / width); width = maxWidth; } 
-          else { width = Math.round((width * maxWidth) / height); height = maxWidth; }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
-        const result = canvas.toDataURL("image/jpeg", 0.8);
-        ctx?.clearRect(0, 0, width, height);
-        canvas.width = 0; canvas.height = 0; img.src = ""; resolve(result);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
+type Product = {
+  product_id: string; 
+  brand: string; 
+  model: string; 
+  color?: string; 
+  colorName?: string;
+  frontImage: string; 
+  arModel: string | null; 
+  faceShape?: string[];
+  calibration?: { pitch: number; yaw: number; roll: number; scale: number; yOffset: number; zOffset: number; };
 };
 
-const processImageForConsistency = (file: File, maxWidth: number = 800): Promise<string> => {
+type Landmark = { 
+  x: number; 
+  y: number; 
+};
+
+const FACE_SHAPES = ["heart", "oblong", "oval", "round", "square"];
+
+// Process uploaded photo to prevent crash
+const processImageStatic = (file: File, maxWidth: number = 800): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -46,6 +39,7 @@ const processImageForConsistency = (file: File, maxWidth: number = 800): Promise
       img.onload = () => {
         let { width, height } = img;
         
+        // Resize the image to prevent crash
         if (width > maxWidth || height > maxWidth) {
           const ratio = Math.min(maxWidth / width, maxWidth / height);
           width = Math.round(width * ratio);
@@ -57,13 +51,14 @@ const processImageForConsistency = (file: File, maxWidth: number = 800): Promise
         canvas.height = height;
         const ctx = canvas.getContext("2d", { willReadFrequently: true }); 
         
+        // Draw the image on the canvas 
         if (ctx) {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = "high";
             ctx.drawImage(img, 0, 0, width, height);
             const result = canvas.toDataURL("image/jpeg", 0.9); 
             ctx.clearRect(0, 0, width, height);
-            canvas.width = 0; canvas.height = 0; 
+            canvas.width = 0; canvas.height = 0; // Clean up canvas 
             resolve(result);
         } else {
             resolve(event.target?.result as string); 
@@ -75,9 +70,12 @@ const processImageForConsistency = (file: File, maxWidth: number = 800): Promise
   });
 };
 
-function preprocessImage(faceCanvas: HTMLCanvasElement): ort.Tensor {
+// Process the face canvas to create an ONNX Runtime tensor for inference
+const processImage = (faceCanvas: HTMLCanvasElement): ort.Tensor => {
+  // Resize the faceCanvas to 224x224 
   const targetSize = 224;
   const resizeCanvas = document.createElement("canvas");
+
   resizeCanvas.width = targetSize; 
   resizeCanvas.height = targetSize;
   const ctx = resizeCanvas.getContext("2d", { willReadFrequently: true });
@@ -90,6 +88,7 @@ function preprocessImage(faceCanvas: HTMLCanvasElement): ort.Tensor {
     ctx.drawImage(faceCanvas, 0, 0, targetSize, targetSize);
   }
 
+  // Convert the resized image data to a Float32Array normalized to [0,1]
   const float32Data = new Float32Array(3 * targetSize * targetSize);
   if (ctx) {
     const imageData = ctx.getImageData(0, 0, targetSize, targetSize).data;
@@ -102,19 +101,9 @@ function preprocessImage(faceCanvas: HTMLCanvasElement): ort.Tensor {
   
   resizeCanvas.width = 0; resizeCanvas.height = 0;
   return new ort.Tensor("float32", float32Data, [1, 3, targetSize, targetSize]);
-}
-
-type Product = {
-  product_id: string; brand: string; model: string; color?: string; colorName?: string;
-  frontImage: string; arModel: string | null; faceShape?: string[];
-  calibration?: { pitch: number; yaw: number; roll: number; scale: number; yOffset: number; zOffset: number; };
 };
 
-type Landmark = { x: number; y: number };
-const CLASS_NAMES = ["heart", "oblong", "oval", "round", "square"];
-const FACE_SHAPES = ["heart", "oblong", "oval", "round", "square"];
-
-export default function VirtualTryOnApp() {
+export default function VirtualTryOnPage() {
   const router = useRouter();
   const params = useSearchParams();
   const productId = params.get("product_id");
@@ -126,7 +115,6 @@ export default function VirtualTryOnApp() {
     }
     return "SCANNING";
   });
-  const [isProcessing, setIsProcessing] = useState(false);
   const [tryOnMode, setTryOnMode] = useState<"realtime" | "photo">(() => {
     if (typeof window !== "undefined") {
       const saved = sessionStorage.getItem("vto_tryOnMode");
@@ -134,10 +122,9 @@ export default function VirtualTryOnApp() {
     }
     return "realtime";
   });
-
+  const [isProcessing, setIsProcessing] = useState(false);
   const [uploadSessionId, setUploadSessionId] = useState<number>(0);
-
-  const [arModel, setArModel] = useState<ort.InferenceSession | null>(null);
+  const [faceShapeModel, setFaceShapeModel] = useState<ort.InferenceSession | null>(null);
   
   const [liveFaceShape, setLiveFaceShape] = useState<string | null>(() => typeof window !== "undefined" ? sessionStorage.getItem("vto_liveFaceShape") : null);
   const [liveFaceProb, setLiveFaceProb] = useState<number | null>(() => {
@@ -156,9 +143,6 @@ export default function VirtualTryOnApp() {
     return null;
   });
 
-  const activeShape = tryOnMode === "photo" ? photoFaceShape : liveFaceShape;
-  const activeProb = tryOnMode === "photo" ? photoFaceProb : liveFaceProb;
-
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedModel, setSelectedModel] = useState<Product | null>(null);
   const [selectedShapeFilter, setSelectedShapeFilter] = useState<string | null>(null);
@@ -168,6 +152,28 @@ export default function VirtualTryOnApp() {
   const [alignHint, setAlignHint] = useState("Move into frame");
   const [cameraAvailable, setCameraAvailable] = useState(true);
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(() => typeof window !== "undefined" ? sessionStorage.getItem("vto_uploadedPhoto") : null);
+
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isShapeExpanded, setIsShapeExpanded] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const faceServiceRef = useRef(sharedFaceLandmarkerService);
+  const rafIdRef = useRef<number | null>(null); 
+  const isMountedRef = useRef(true);
+
+  const appStageRef = useRef(appStage);
+  const isProcessingRef = useRef(isProcessing);
+  const isFaceAlignedRef = useRef(isFaceAligned);
+  const alignHintRef = useRef(alignHint);
+
+  useEffect(() => { appStageRef.current = appStage; }, [appStage]);
+  useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -180,37 +186,6 @@ export default function VirtualTryOnApp() {
       if (uploadedPhoto) sessionStorage.setItem("vto_uploadedPhoto", uploadedPhoto); else sessionStorage.removeItem("vto_uploadedPhoto");
     }
   }, [appStage, tryOnMode, liveFaceShape, liveFaceProb, photoFaceShape, photoFaceProb, uploadedPhoto]);
-  
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [isShapeExpanded, setIsShapeExpanded] = useState(true);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const faceServiceRef = useRef(new FaceLandmarkerService());
-  const rafIdRef = useRef<number | null>(null); 
-  const isMountedRef = useRef(true);
-
-  const appStageRef = useRef(appStage);
-  const isProcessingRef = useRef(isProcessing);
-  useEffect(() => { appStageRef.current = appStage; }, [appStage]);
-  useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
-  
-  const isFaceAlignedRef = useRef(isFaceAligned);
-  const alignHintRef = useRef(alignHint);
-
-  const updateHint = (hint: string, aligned: boolean) => {
-    if (alignHintRef.current !== hint || isFaceAlignedRef.current !== aligned) {
-      alignHintRef.current = hint;
-      isFaceAlignedRef.current = aligned;
-      setAlignHint(hint);
-      setIsFaceAligned(aligned);
-    }
-  };
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -229,13 +204,16 @@ export default function VirtualTryOnApp() {
           executionProviders: ["wasm"], 
           graphOptimizationLevel: "all"
         });
-        setArModel(session);
+        setFaceShapeModel(session);
       } catch (err) { console.error("ONNX Load Error:", err); }
 
       try {
-        const res = await axiosInstance.get("/products");
-        const mapped: Product[] = res.data.map((item: any) => ({
-          product_id: item.product_id, brand: item.brand, model: item.model, color: item.color,
+        const productsData = await productService.getAllProducts();
+        const mapped: Product[] = productsData.data.map((item: any) => ({
+          product_id: item.product_id, 
+          brand: item.brand, 
+          model: item.model, 
+          color: item.color,
           colorName: item.color ? namer(item.color).ntc[0].name : "",
           arModel: item.ar_model ? `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${item.ar_model.file_path}` : null,
           calibration: item.ar_model ? {
@@ -262,8 +240,25 @@ export default function VirtualTryOnApp() {
     return () => {
       isMountedRef.current = false;
       stopEverything(); 
+      
+      // Clear session storage on unmount so navigating away resets the state.
+      // On a hard page refresh, this cleanup is bypassed by the browser, preserving the state.
+      const keys = [
+        "vto_appStage", "vto_tryOnMode", "vto_liveFaceShape", "vto_liveFaceProb", 
+        "vto_photoFaceShape", "vto_photoFaceProb", "vto_uploadedPhoto"
+      ];
+      keys.forEach(k => sessionStorage.removeItem(k));
     };
   }, []);
+
+  const updateHint = (hint: string, aligned: boolean) => {
+    if (alignHintRef.current !== hint || isFaceAlignedRef.current !== aligned) {
+      alignHintRef.current = hint;
+      isFaceAlignedRef.current = aligned;
+      setAlignHint(hint);
+      setIsFaceAligned(aligned);
+    }
+  };
 
   const killPageCamera = () => {
     if (rafIdRef.current) { cancelAnimationFrame(rafIdRef.current); rafIdRef.current = null; }
@@ -274,7 +269,7 @@ export default function VirtualTryOnApp() {
     killPageCamera();
     if (videoRef.current) videoRef.current.srcObject = null;
     if (faceServiceRef.current) faceServiceRef.current.close();
-    if (arModel) { arModel.release().catch(()=>{}); }
+    if (faceShapeModel) { faceShapeModel.release().catch(()=>{}); }
   };
 
   const startCamera = async () => {
@@ -294,6 +289,7 @@ export default function VirtualTryOnApp() {
     } catch (err) { setCameraAvailable(false); }
   };
 
+  // Detect faces in real time
   const detectLoop = () => {
     if (!isMountedRef.current || appStageRef.current !== "SCANNING" || isProcessingRef.current) return;
 
@@ -319,11 +315,13 @@ export default function VirtualTryOnApp() {
 
     if (currentLandmarks && currentLandmarks.length > 0) {
       let minX = 1, minY = 1, maxX = 0, maxY = 0;
+      //Calculate bounding box of detected landmarks
       currentLandmarks.forEach(p => {
         if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
         if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
       });
 
+      //Determine alignment based on bounding box size and position
       const w = maxX - minX;
       let newHint = "Align your face";
       let aligned = false;
@@ -349,12 +347,15 @@ export default function VirtualTryOnApp() {
     rafIdRef.current = requestAnimationFrame(detectLoop);
   };
 
-  const drawSciFiLandmarks = (img: HTMLImageElement | HTMLCanvasElement, lm: Landmark[]) => {
+  // Draw landmarks for visual feedback
+  const drawVisualLandmarks = (img: HTMLImageElement | HTMLCanvasElement, lm: Landmark[]) => {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx || !canvasRef.current) return;
     
-    const cw = img.width; const ch = img.height;
-    canvasRef.current.width = cw; canvasRef.current.height = ch;
+    const cw = img.width; 
+    const ch = img.height;
+    canvasRef.current.width = cw; 
+    canvasRef.current.height = ch;
     
     ctx.clearRect(0, 0, cw, ch);
     ctx.drawImage(img, 0, 0, cw, ch);
@@ -362,10 +363,14 @@ export default function VirtualTryOnApp() {
     ctx.fillStyle = "rgba(0, 20, 20, 0.4)";
     ctx.fillRect(0, 0, cw, ch);
     
-    ctx.fillStyle = "#00FFFF"; ctx.shadowColor = "#00FFFF"; ctx.shadowBlur = 8;
+    ctx.fillStyle = "#00FFFF"; 
+    ctx.shadowColor = "#00FFFF"; 
+    ctx.shadowBlur = 8;
     
+    // Get the coordinates of the landmarks 
     const getP = (p: Landmark) => ({ x: p.x * cw, y: p.y * ch });
 
+    // Connect the face landmark points to form an oval 
     const faceOvalIndices = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
     ctx.beginPath();
     faceOvalIndices.forEach((idx, i) => {
@@ -382,18 +387,23 @@ export default function VirtualTryOnApp() {
     ctx.shadowBlur = 0;
   };
 
+  // Predict face shape from image
   const predictFaceShape = async (imageSrc: string, bypassLandmarks: Landmark[] | null = null, skipDraw: boolean = false): Promise<{shape: string, prob: number} | null> => {
-    if (!arModel || !imageSrc) return null;
+    if (!faceShapeModel || !imageSrc) return null;
 
     return new Promise((resolve) => {
-      const img = new Image(); img.src = imageSrc;
+      const img = new Image(); 
+      img.src = imageSrc;
       img.onload = async () => {
-        const cw = img.width; const ch = img.height;
+        const cw = img.width; 
+        const ch = img.height;
 
         let lm1 = bypassLandmarks;
+        // Detect landmarks for uploaded photo
         if (!lm1) {
           let results1 = await faceServiceRef.current.detectImage(img);
           let retries = 10; 
+          // Retry to ensure robust detection
           while ((!results1?.faceLandmarks || results1.faceLandmarks.length === 0) && retries > 0) {
              await new Promise(r => setTimeout(r, 100));
              results1 = await faceServiceRef.current.detectImage(img);
@@ -405,18 +415,22 @@ export default function VirtualTryOnApp() {
         if (!lm1) { resolve(null); return; }
         
         if (!skipDraw) {
-          drawSciFiLandmarks(img, lm1);
+          drawVisualLandmarks(img, lm1);
         }
 
+        //Calculate eye angle for alignment
         const p1 = lm1[33].x < lm1[263].x ? lm1[33] : lm1[263];
         const p2 = lm1[33].x < lm1[263].x ? lm1[263] : lm1[33];
         const angleRad = Math.atan2((p2.y - p1.y) * ch, (p2.x - p1.x) * cw);
 
+        //Align face based on eye angle and crop to bounding box with padding
         const alignedCanvas = document.createElement("canvas");
-        alignedCanvas.width = cw; alignedCanvas.height = ch;
+        alignedCanvas.width = cw; 
+        alignedCanvas.height = ch;
         const aCtx = alignedCanvas.getContext("2d", { willReadFrequently: true });
         if (!aCtx) return;
 
+        //Rotate around center and draw original image
         aCtx.fillStyle = "black";
         aCtx.fillRect(0, 0, cw, ch);
         
@@ -427,6 +441,7 @@ export default function VirtualTryOnApp() {
         aCtx.drawImage(img, -cw / 2, -ch / 2, cw, ch);
         aCtx.setTransform(1, 0, 0, 1, 0, 0); 
 
+        // Run face landmark detection again on aligned image to get accurate bounding box
         let results2 = await faceServiceRef.current.detectImage(alignedCanvas);
         let retries2 = 10;
         while ((!results2?.faceLandmarks || results2.faceLandmarks.length === 0) && retries2 > 0) {
@@ -438,19 +453,29 @@ export default function VirtualTryOnApp() {
         const lm2 = results2?.faceLandmarks?.[0];
         if (!lm2) { console.warn("2nd MediaPipe detection failed!"); resolve(null); return; }
 
-        const xs = lm2.map(p => p.x * cw); const ys = lm2.map(p => p.y * ch);
-        const xMin = Math.min(...xs); const xMax = Math.max(...xs);
-        const yMin = Math.min(...ys); const yMax = Math.max(...ys);
+        // Calculate bounding box of detected landmarks
+        const xs = lm2.map(p => p.x * cw); 
+        const ys = lm2.map(p => p.y * ch);
+        const xMin = Math.min(...xs); // Most left point
+        const xMax = Math.max(...xs); // Most right point
+        const yMin = Math.min(...ys); // Most top point
+        const yMax = Math.max(...ys); // Most bottom point
 
-        const padX = (xMax - xMin) * 0.2; const padY = (yMax - yMin) * 0.3; 
+        // Add padding to bounding box to ensure forehead and jawline are included
+        const padX = (xMax - xMin) * 0.2; 
+        const padY = (yMax - yMin) * 0.3; 
         
-        const x1 = Math.max(0, xMin - padX); const x2 = Math.min(cw, xMax + padX);
-        const y1 = Math.max(0, yMin - padY); const y2 = Math.min(ch, yMax + padY);
+        const x1 = Math.max(0, xMin - padX); // Left boundary 
+        const x2 = Math.min(cw, xMax + padX); // Right boundary 
+        const y1 = Math.max(0, yMin - padY);  // Top boundary 
+        const y2 = Math.min(ch, yMax + padY); // Bottom boundary
 
+        // Crop the aligned face region
         const faceCanvas = document.createElement("canvas");
         faceCanvas.width = Math.round(x2 - x1); 
         faceCanvas.height = Math.round(y2 - y1);
         const fCtx = faceCanvas.getContext("2d", { willReadFrequently: true });
+      
         if (fCtx) {
            fCtx.fillStyle = "black";
            fCtx.fillRect(0, 0, faceCanvas.width, faceCanvas.height);
@@ -458,12 +483,13 @@ export default function VirtualTryOnApp() {
         }
 
         try {
-          const inputTensor = preprocessImage(faceCanvas);
-          const feeds = { [arModel.inputNames[0]]: inputTensor };
-          const output = await arModel.run(feeds);
-          const data = output[arModel.outputNames[0]].data as Float32Array;
+          // Run ONNX model inference on the cropped face image
+          const inputTensor = processImage(faceCanvas);
+          const feeds = { [faceShapeModel.inputNames[0]]: inputTensor };
+          const output = await faceShapeModel.run(feeds);
+          const data = output[faceShapeModel.outputNames[0]].data as Float32Array;
           const classIdx = data.indexOf(Math.max(...Array.from(data)));
-          resolve({ shape: CLASS_NAMES[classIdx], prob: Math.max(...Array.from(data)) });
+          resolve({ shape: FACE_SHAPES[classIdx], prob: Math.max(...Array.from(data)) });
         } catch (error) { 
           console.error("ONNX inference failed:", error);
           resolve(null); 
@@ -476,32 +502,39 @@ export default function VirtualTryOnApp() {
     });
   };
 
+  // Handle real-time scan
   const handleLiveScan = async () => {
+    // Stop scanning when face is not aligned
     if (!isFaceAlignedRef.current) return;
+
     const dataUrl = canvasRef.current?.toDataURL("image/jpeg", 0.9);
     if (!dataUrl) return;
 
     const currentLiveLandmarks = faceServiceRef.current.latestLandmarks;
 
+    // Stop the camera and processing while we analyze the captured image
     killPageCamera(); 
     setIsProcessing(true);
     await faceServiceRef.current.init("IMAGE"); 
 
     try {
+      // Pass the captured image and landmarks to predict face shape
       const result = await predictFaceShape(dataUrl, currentLiveLandmarks, false);
       if (result) {
         if (faceServiceRef.current) faceServiceRef.current.close();
         setTimeout(() => {
           setLiveFaceShape(result.shape);
           setLiveFaceProb(result.prob);
-          setTryOnMode("realtime");
+          setSelectedShapeFilter(result.shape);
+          setTryOnMode("realtime"); // Access the real-time mode
           setIsProcessing(false);
           setAppStage("TRY_ON"); 
         }, 800); 
-      } else { resetToScanning(); }
+      } else { resetToScanning(); } // Reset to scanning mode
     } catch (error) { resetToScanning(); }
   };
 
+  // Handle photo upload for virtual try on
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -522,7 +555,7 @@ export default function VirtualTryOnApp() {
 
     await faceServiceRef.current.init("IMAGE"); 
     
-    const compressedDataUrl = await processImageForConsistency(file, 800);
+    const compressedDataUrl = await processImageStatic(file, 800);
 
     setUploadSessionId(Date.now());
     
@@ -535,6 +568,7 @@ export default function VirtualTryOnApp() {
       if (faceServiceRef.current) faceServiceRef.current.close();
       setPhotoFaceShape(result.shape); 
       setPhotoFaceProb(result.prob);
+      setSelectedShapeFilter(result.shape);
       setIsProcessing(false);
     } else {
       setErrorMessage("No face detected. Please use a clear front-facing photo.");
@@ -545,6 +579,7 @@ export default function VirtualTryOnApp() {
     }
   };
 
+  // Reset to scanning mode
   const resetToScanning = async () => {
     setIsProcessing(false);
     setAppStage("SCANNING");
@@ -558,7 +593,28 @@ export default function VirtualTryOnApp() {
     return { text: "Low confidence", color: "#721c24", bg: "#f8d7da", border: "#f5c6cb", icon: "bi-x-circle-fill" };
   };
 
+  const handleSaveFaceShape = async () => {
+    const activeShape = tryOnMode === "photo" ? photoFaceShape : liveFaceShape;
+    if (!activeShape) return;
+    setSaveStatus("saving");
+    try {
+      const profileRes = await userService.getProfile();
+      const profile = profileRes.data;
+      await userService.updateProfile(profile.username, profile.gender, profile.phone_number, activeShape);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error("Failed to save face shape:", err);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  };
+
+  // Derived state calculations
+  const activeShape = tryOnMode === "photo" ? photoFaceShape : liveFaceShape;
+  const activeProb = tryOnMode === "photo" ? photoFaceProb : liveFaceProb;
   const activeShapeForFilter = activeShape || "oval";
+  
   const filteredProducts = products.filter(p => p.arModel).filter(p => {
     if (!selectedShapeFilter) return true;
     return p.faceShape?.includes(selectedShapeFilter);
@@ -604,6 +660,19 @@ export default function VirtualTryOnApp() {
                         </div>
                       );
                     })()}
+                    {userService.hasValidToken() && (
+                      <button 
+                        className={`btn mt-2 w-100 ${saveStatus === 'saved' ? 'btn-success' : saveStatus === 'error' ? 'btn-danger' : 'btn-outline-primary'}`} 
+                        onClick={handleSaveFaceShape} 
+                        disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                        style={{ maxWidth: '220px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}
+                      >
+                        {saveStatus === 'idle' && <span>Save Face Shape</span>}
+                        {saveStatus === 'saving' && <span><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Saving...</span>}
+                        {saveStatus === 'saved' && <span><i className="bi bi-check-circle-fill me-1"></i>Saved!</span>}
+                        {saveStatus === 'error' && <span><i className="bi bi-exclamation-triangle-fill me-1"></i>Error</span>}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <div style={{ color: '#888', fontSize: '14px', fontStyle: 'italic', padding: '10px 0' }}>
@@ -696,13 +765,22 @@ export default function VirtualTryOnApp() {
           />
 
           {appStage === "SCANNING" && !isProcessing && (
-            <div className="face-scanner-overlay aligned" style={{ position: 'absolute', pointerEvents: 'none' }}>
-              <div className={`guide-oval ${isFaceAligned ? "active" : ""}`}>
-                <div className="corner-mark tl"></div><div className="corner-mark tr"></div>
-                <div className="corner-mark bl"></div><div className="corner-mark br"></div>
+            cameraAvailable ? (
+              <div className="face-scanner-overlay aligned" style={{ position: 'absolute', pointerEvents: 'none' }}>
+                <div className={`guide-oval ${isFaceAligned ? "active" : ""}`}>
+                  <div className="corner-mark tl"></div><div className="corner-mark tr"></div>
+                  <div className="corner-mark bl"></div><div className="corner-mark br"></div>
+                </div>
+                <div className="hint-text">{alignHint}</div>
               </div>
-              <div className="hint-text">{alignHint}</div>
-            </div>
+            ) : (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8f9fa', padding: '20px', textAlign: 'center' }}>
+                <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginBottom: '10px' }}>Webcam Unavailable</p>
+                <p style={{ fontSize: '15px', color: '#555', maxWidth: '350px', lineHeight: '1.5', margin: 0 }}>
+                  We couldn't access your camera. Please click <b>"Or upload a photo"</b> below to use the Photo Try-On feature.
+                </p>
+              </div>
+            )
           )}
         </div>
 
@@ -726,7 +804,7 @@ export default function VirtualTryOnApp() {
             <button 
               onClick={handleLiveScan} 
               className="scan-btn" 
-              disabled={!isFaceAligned || !arModel || isProcessing}
+              disabled={!isFaceAligned || !faceShapeModel || isProcessing}
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -736,7 +814,7 @@ export default function VirtualTryOnApp() {
                 transition: 'all 0.3s ease'
               }}
             >
-              {!arModel ? (
+              {!faceShapeModel ? (
                 <>
                   <div className="spinner-border spinner-border-sm text-light" role="status"></div>
                   <span>Loading Engine...</span>
@@ -769,23 +847,29 @@ export default function VirtualTryOnApp() {
             <div className="loading">Loading products...</div>
           ) : (
             <div className="product-grid">
-              {filteredProducts.map(p => (
-                <div key={p.product_id} className={`product-card ${selectedModel?.arModel === p.arModel ? "active" : ""}`} onClick={() => setSelectedModel(p)}>
-                  <img src={p.frontImage} />
-                  <div className="info" style={{textAlign: 'center'}}>
-                    <div className="brand">{p.brand}</div>
-                    <div className="model">{p.model}</div>
-                    <div className="color">
-                      {p.color && (
-                        <span className="badge border d-inline-flex align-items-center gap-1" style={{ fontSize: "9px", padding: "3px 6px" }}>
-                          <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: p.color, display: "inline-block" }}></span>
-                          <span className="text-dark">{p.colorName}</span>
-                        </span>
-                      )}
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map(p => (
+                  <div key={p.product_id} className={`product-card ${selectedModel?.arModel === p.arModel ? "active" : ""}`} onClick={() => setSelectedModel(p)}>
+                    <img src={p.frontImage} />
+                    <div className="info" style={{textAlign: 'center'}}>
+                      <div className="brand">{p.brand}</div>
+                      <div className="model">{p.model}</div>
+                      <div className="color">
+                        {p.color && (
+                          <span className="badge border d-inline-flex align-items-center gap-1" style={{ fontSize: "9px", padding: "3px 6px" }}>
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: p.color, display: "inline-block" }}></span>
+                            <span className="text-dark">{p.colorName}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: "2rem", color: "#888", gridColumn: "1 / -1" }}>
+                  <p style={{ margin: 0 }}>No product suitable for selected face shape, try others</p>
                 </div>
-              ))}
+              )}
             </div>
           )
         )}

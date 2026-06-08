@@ -172,7 +172,7 @@ exports.resetPassword = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.userId, {
-      attributes: ["user_id", "username", "email", "gender", "role", "account_status"]
+      attributes: ["user_id", "username", "email", "gender", "face_shape", "role", "account_status", "phone_number"]
     });
     if (!user) return res.status(404).send({ message: "User not found" });
     res.send(user);
@@ -183,7 +183,7 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { username, gender } = req.body;
+    const { username, gender, face_shape, phone_number } = req.body;
     const user = await User.findByPk(req.userId);
 
     if (!user) return res.status(404).send({ message: "User not found" });
@@ -194,12 +194,17 @@ exports.updateProfile = async (req, res) => {
     }
 
     await User.update(
-      { username: username || user.username, gender: gender || user.gender },
+      { 
+        username: username || user.username, 
+        gender: gender || user.gender,
+        face_shape: face_shape !== undefined ? face_shape : user.face_shape,
+        phone_number: phone_number !== undefined ? phone_number : user.phone_number
+      },
       { where: { user_id: req.userId } }
     );
 
     const updatedUser = await User.findByPk(req.userId, {
-      attributes: ["user_id", "username", "email", "gender", "role"]
+      attributes: ["user_id", "username", "email", "gender", "face_shape", "role", "phone_number"]
     });
     res.send(updatedUser);
   } catch (err) {

@@ -23,6 +23,14 @@ module.exports = (sequelize, Sequelize) => {
     gender: {
       type: Sequelize.STRING
     },
+    face_shape: {
+      type: Sequelize.STRING,
+      allowNull: true
+    },
+    phone_number: {
+      type: Sequelize.STRING,
+      allowNull: true
+    },
     role: {
       type: Sequelize.STRING,
       allowNull: false

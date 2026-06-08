@@ -335,6 +335,7 @@ export default function BookingListPage() {
                   <tr>
                     <th>No</th>
                     <th>User</th>
+                    <th>Contact Info</th>
                     <th>Product</th>
                     <th>Date</th>
                     <th>Time</th>
@@ -355,6 +356,10 @@ export default function BookingListPage() {
                       <tr key={b.booking_id}>
                         <td>{(currentPage - 1) * pageSize + i + 1}</td>
                         <td>{b.user?.username}</td>
+                        <td>
+                          <div>{b.user?.email}</div>
+                          {b.user?.phone_number && <div className="text-muted small"><i className="bi bi-telephone-fill me-1"></i>+60 {b.user.phone_number}</div>}
+                        </td>
                         <td>{b.product?.brand} - {b.product?.model}</td>
                         <td>{b.booking_date}</td>
                         <td>{b.time_slot}</td>
@@ -449,6 +454,7 @@ export default function BookingListPage() {
           {selectedEvent && (
             <div className="p-2">
               <p className="mb-2"><strong>User:</strong> {selectedEvent.user?.username} ({selectedEvent.user?.email})</p>
+              {selectedEvent.user?.phone_number && <p className="mb-2"><strong>Phone:</strong> +60 {selectedEvent.user.phone_number}</p>}
               <p className="mb-2"><strong>Product:</strong> {selectedEvent.product?.brand} - {selectedEvent.product?.model}</p>
               <p className="mb-2"><strong>Date:</strong> {selectedEvent.booking_date}</p>
               <p className="mb-2"><strong>Time:</strong> {selectedEvent.time_slot}</p>

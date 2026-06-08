@@ -50,16 +50,6 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: false,
         defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
         onUpdate: Sequelize.literal("CURRENT_TIMESTAMP")
-    },
-
-    expired_at: {
-        type: Sequelize.DATE,
-        allowNull: true
-    },
-
-    cancelled_at: {
-        type: Sequelize.DATE,
-        allowNull: true
     }
 
 

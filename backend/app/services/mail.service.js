@@ -107,6 +107,26 @@ exports.sendBookingReminderEmail = async (booking) => {
   });
 };
 
+exports.sendBookingAcceptedEmail = async (booking) => {
+  const formattedDate = formatDateWithDay(booking.booking_date);
+  const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
+
+  return transporter.sendMail({
+    from: `"OG Vision" <${process.env.MAIL_USER}>`,
+    to: booking.user.email,
+    subject: "Booking Accepted",
+    html: `
+      <p>Your booking has been accepted! We look forward to seeing you.</p>
+      <ul>
+        <li><strong>Product:</strong> ${productInfo}</li>
+        <li><strong>Date:</strong> ${formattedDate}</li>
+        <li><strong>Time:</strong> ${booking.time_slot}</li>
+      </ul>
+      <p>Please arrive at our store on time. Thank you!</p>
+    `
+  });
+};
+
 exports.sendBookingRejectedEmail = async (booking, reason) => {
   const formattedDate = formatDateWithDay(booking.booking_date);
   const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;

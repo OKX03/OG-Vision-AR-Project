@@ -138,8 +138,8 @@ export const userService = {
     return axiosInstance.get(`${BASE_URL}/profile`);
   },
 
-  updateProfile(username: string, gender: string) {
-    return axiosInstance.put(`${BASE_URL}/profile`, { username, gender });
+  updateProfile(username: string, gender: string, phone_number: string, face_shape?: string) {
+    return axiosInstance.put(`${BASE_URL}/profile`, { username, gender, phone_number, face_shape });
   },
 
   getUserStatus() {

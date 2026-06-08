@@ -156,62 +156,64 @@ export default function MyBookingsPage() {
         </Button>
       </div>
 
-      <table className="table table-hover">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Product</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th className="text-center">Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {paginated.length === 0 ? (
+      <div className="table-responsive">
+        <table className="table table-hover">
+          <thead>
             <tr>
-              <td colSpan={6} className="text-center text-muted py-4">
-                No bookings found
-              </td>
+              <th>No</th>
+              <th>Product</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th className="text-center">Action</th>
             </tr>
-          ) : (
-            paginated.map((b, i) => (
-              <tr key={b.booking_id}>
-                <td>{(currentPage - 1) * pageSize + i + 1}</td>
-                <td>{b.product?.brand} - {b.product?.model}</td>
+          </thead>
 
-                <td>
-                  {new Date(b.booking_date).toLocaleDateString()}
-                </td>
-
-                <td>{b.time_slot}</td>
-
-                <td>
-                  {getStatusBadge(b.status)}
-                </td>
-
-                <td className="text-center">
-                  {canCancel(b) ? (
-                    <Button
-                      size="sm"
-                      variant="outline-danger"
-                      onClick={() => {
-                        setTargetBooking(b);
-                        setShowCancelModal(true);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  ) : (
-                    <span className="text-muted small">—</span>
-                  )}
+          <tbody>
+            {paginated.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center text-muted py-4">
+                  No bookings found
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              paginated.map((b, i) => (
+                <tr key={b.booking_id}>
+                  <td>{(currentPage - 1) * pageSize + i + 1}</td>
+                  <td>{b.product?.brand} - {b.product?.model}</td>
+
+                  <td>
+                    {new Date(b.booking_date).toLocaleDateString()}
+                  </td>
+
+                  <td>{b.time_slot}</td>
+
+                  <td>
+                    {getStatusBadge(b.status)}
+                  </td>
+
+                  <td className="text-center">
+                    {canCancel(b) ? (
+                      <Button
+                        size="sm"
+                        variant="outline-danger"
+                        onClick={() => {
+                          setTargetBooking(b);
+                          setShowCancelModal(true);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    ) : (
+                      <span className="text-muted small">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="d-flex justify-content-between align-items-center mt-3">
         <div className="text-muted small">
@@ -270,7 +272,7 @@ export default function MyBookingsPage() {
 
         <Modal.Footer className="justify-content-center">
           <Button variant="danger" onClick={confirmCancel}>
-            Confirm Cancel
+            Confirm
           </Button>
           <Button variant="light" onClick={() => setShowCancelModal(false)}>
             Back

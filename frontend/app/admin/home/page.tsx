@@ -44,17 +44,17 @@ export default function AdminHome() {
             </div>
           </a>
 
-          <a href="/admin/try-on" className="dashboard-card vto">
+          <a href="/admin/booking-list" className="dashboard-card booking">
             <div className="card-icon">
-              <i className="bi bi-vr icon-bg"></i>
+              <i className="bi bi-calendar-check icon-bg"></i>
             </div>
             <div className="card-text">
-              <h3>Virtual Try-On</h3>
-              <p>Test the 3D asset of eyewear.</p>
+              <h3>Booking Management</h3>
+              <p>Manage customer bookings.</p>
             </div>
           </a>
 
-          <a href="/admin/faq" className="dashboard-card faq">
+          <a href="/admin/faq-list" className="dashboard-card faq">
             <div className="card-icon">
               <i className="bi bi-chat-dots icon-bg"></i>
             </div>

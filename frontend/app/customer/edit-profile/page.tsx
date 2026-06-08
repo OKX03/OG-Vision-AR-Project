@@ -11,7 +11,9 @@ export default function EditProfilePage() {
   const [profileForm, setProfileForm] = useState({
     username: "",
     gender: "",
-    email: ""
+    email: "",
+    phone_number: "",
+    face_shape: ""
   });
   
   const [accountStatus, setAccountStatus] = useState("");
@@ -25,16 +27,21 @@ export default function EditProfilePage() {
       setProfileForm({
         username: res.data.username,
         gender: res.data.gender,
-        email: res.data.email
+        email: res.data.email,
+        phone_number: res.data.phone_number || "",
+        face_shape: res.data.face_shape || ""
       });
       setAccountStatus(res.data.account_status);
     });
   }, []);
 
   const validateForm = () => {
-    const newErrors: { username?: string; gender?: string } = {};
+    const newErrors: { username?: string; gender?: string; phone_number?: string } = {};
     if (!profileForm.username) newErrors.username = "Username is required";
     if (!profileForm.gender) newErrors.gender = "Gender is required";
+    if (profileForm.phone_number && !/^\d{9,10}$/.test(profileForm.phone_number)) {
+      newErrors.phone_number = "Phone number must be 9 to 10 digits";
+    }
     return newErrors;
   };
 
@@ -51,7 +58,7 @@ export default function EditProfilePage() {
 
   const confirmEdit = async () => {
     try {
-      await userService.updateProfile(profileForm.username, profileForm.gender);
+      await userService.updateProfile(profileForm.username, profileForm.gender, profileForm.phone_number);
       setShowConfirm(false);
       setShowSuccess(true);
     } catch (err: any) {
@@ -116,6 +123,27 @@ export default function EditProfilePage() {
             />
           </div>
 
+          <div className="mb-3 text-start">
+            <label className="form-label text-muted small fw-bold">Phone Number <span className="fw-normal text-secondary">(Optional)</span></label>
+            <div className="input-group">
+              <span className={`input-group-text border-0 bg-light ${submitted && errors.phone_number ? "border border-danger border-end-0" : ""}`} style={{ borderTopLeftRadius: "8px", borderBottomLeftRadius: "8px" }}>
+                +60
+              </span>
+              <input 
+                type="text"
+                className={`form-control border-0 bg-light shadow-none ${submitted && errors.phone_number ? "is-invalid" : ""}`} 
+                style={{ padding: "12px", borderTopRightRadius: "8px", borderBottomRightRadius: "8px" }} 
+                value={profileForm.phone_number} 
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  setProfileForm({ ...profileForm, phone_number: val });
+                }}
+                placeholder="e.g. 123456789"
+              />
+              {submitted && errors.phone_number && <div className="invalid-feedback">{errors.phone_number}</div>}
+            </div>
+          </div>
+
           <div className="mb-4 text-start">
             <label className="form-label text-muted small fw-bold">Gender</label>
             <select
@@ -127,9 +155,29 @@ export default function EditProfilePage() {
               <option value="">select gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
-              <option value="Other">Other</option>
             </select>
             {submitted && errors.gender && <div className="invalid-feedback">{errors.gender}</div>}
+          </div>
+
+          <div className="mb-4 text-start">
+            <label className="form-label text-muted small fw-bold">Face Shape</label>
+            <div className="position-relative">
+            {profileForm.face_shape ? (
+              <input 
+                className="form-control border-0 bg-light text-capitalize text-muted" 
+                style={{ padding: "12px", borderRadius: "8px", cursor: "not-allowed" }} 
+                value={profileForm.face_shape} 
+                disabled 
+              />
+            ) : (
+              <div 
+                className="form-control border-0 bg-light d-flex align-items-center" 
+                style={{ padding: "12px", borderRadius: "8px" }}
+              >
+                <span className="text-muted me-2" style={{ fontSize: '14px' }}>Not detected</span>
+              </div>
+            )}
+            </div>
           </div>
 
           <div className="d-flex gap-3 mt-2">

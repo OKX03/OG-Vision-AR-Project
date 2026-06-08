@@ -17,14 +17,21 @@ export default function UserLayout({ children }: Props) {
 
   useEffect(() => {
     import('bootstrap/dist/js/bootstrap.bundle.min.js');
+    
+    // Preload ONNX model to ensure efficiency when opening the virtual try-on page
+    fetch('/face_shape_model/model.onnx', { cache: 'force-cache' }).catch(() => {});
   }, []);
 
   const logout = async () => {
     await userService.logout();
   };
 
-  const checkActive = (path: string) => {
-    return pathname.includes(path) ? 'active-link' : '';
+  const checkActive = (paths: string | string[]) => {
+    if (Array.isArray(paths)) {
+      return paths.some(path => pathname.includes(path)) ? "active" : "";
+    }
+
+    return pathname.includes(paths) ? "active" : "";
   };
 
   return (
@@ -44,7 +51,10 @@ export default function UserLayout({ children }: Props) {
           <div className="ms-auto d-flex align-items-center gap-3 order-lg-3 me-2">
             <i
               className="bi bi-person fs-4 cursor-pointer"
-              onClick={() => router.push('/customer/profile')}
+              onClick={() => {
+                router.push('/customer/profile');
+                setMenuOpen(false);
+              }}
             ></i>
 
             <button
@@ -85,7 +95,10 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
-                  className={`nav-link cursor-pointer ${checkActive('/customer/product-list')}`}
+                  className={`nav-link cursor-pointer ${checkActive([
+                    '/customer/product-list', 
+                    '/customer/product-details'
+                  ])}`}
                   onClick={() => {
                     router.push('/customer/product-list');
                     setMenuOpen(false);
@@ -109,18 +122,6 @@ export default function UserLayout({ children }: Props) {
 
               <li className="nav-item">
                 <span
-                  className={`nav-link cursor-pointer ${checkActive('/customer/customer-service')}`}
-                  onClick={() => {
-                    router.push('/customer/customer-service');
-                    setMenuOpen(false);
-                  }}
-                >
-                  Customer Service
-                </span>
-              </li>
-
-              <li className="nav-item">
-                <span
                   className={`nav-link cursor-pointer ${checkActive('/customer/booking-list')}`}
                   onClick={() => {
                     router.push('/customer/booking-list');
@@ -128,6 +129,21 @@ export default function UserLayout({ children }: Props) {
                   }}
                 >
                   My Bookings
+                </span>
+              </li>
+
+              <li className="nav-item">
+                <span
+                  className={`nav-link cursor-pointer ${checkActive([
+                    '/customer/customer-service', 
+                    '/customer/chat-bot'
+                  ])}`}
+                  onClick={() => {
+                    router.push('/customer/customer-service');
+                    setMenuOpen(false);
+                  }}
+                >
+                  Customer Service
                 </span>
               </li>
 
