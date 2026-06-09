@@ -88,12 +88,19 @@ export default function EditProfilePage() {
           <div className="mt-2 px-5 d-flex align-items-center justify-content-center position-relative">
             <input
               type="text"
-              className={`form-control border-0 text-center fw-bold fs-5 bg-transparent p-0 ${submitted && errors.username ? "is-invalid" : ""}`}
-              style={{ boxShadow: "none", color: "#333" }}
+              className={`form-control border-0 border-bottom border-2 text-center fw-bold fs-5 bg-transparent px-2 py-1 ${submitted && errors.username ? "is-invalid" : ""}`}
+              style={{ 
+                boxShadow: "none", 
+                color: "#333", 
+                borderRadius: "0", 
+                borderBottomStyle: "dashed",
+                cursor: "text"
+              }}
               value={profileForm.username}
               onChange={e => setProfileForm({ ...profileForm, username: e.target.value })}
+              title="Click to edit username"
             />
-            <i className="bi bi-pencil-fill ms-2 text-muted" style={{ fontSize: "0.9rem" }}></i>
+            <i className="bi bi-pencil-fill ms-2 text-muted" style={{ fontSize: "0.9rem" }} title="Edit username"></i>
           </div>
           {submitted && errors.username && <div className="text-danger small mt-1">{errors.username}</div>}
 
@@ -118,7 +125,7 @@ export default function EditProfilePage() {
             <input 
               className="form-control border-0 bg-light text-muted" 
               style={{ padding: "12px", borderRadius: "8px", cursor: "not-allowed" }} 
-              value={profileForm.email || "user0001@gmail.com"} 
+              value={profileForm.email} 
               disabled 
             />
           </div>
@@ -148,11 +155,10 @@ export default function EditProfilePage() {
             <label className="form-label text-muted small fw-bold">Gender</label>
             <select
               className={`form-select border-0 bg-light shadow-none ${submitted && errors.gender ? "is-invalid" : ""}`}
-              style={{ padding: "12px", borderRadius: "8px" }}
+              style={{ padding: "12px", borderRadius: "8px", cursor: "pointer" }}
               value={profileForm.gender}
               onChange={e => setProfileForm({ ...profileForm, gender: e.target.value })}
             >
-              <option value="">select gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
@@ -183,7 +189,7 @@ export default function EditProfilePage() {
           <div className="d-flex gap-3 mt-2">
             <button
                 type="button"
-                className="btn btn-danger w-50 fw-bold py-2 shadow-sm"
+                className="btn btn-secondary w-50 fw-bold py-2 shadow-sm"
                 style={{ borderRadius: "8px", border: "1px solid #ddd" }}
                 onClick={() => router.push("/customer/profile")}
             >
@@ -209,8 +215,8 @@ export default function EditProfilePage() {
           Are you sure you want to edit profile?
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
+          <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
           <Button variant="success" className="px-4" onClick={confirmEdit}>Confirm</Button>
-          <Button variant="danger" onClick={() => setShowConfirm(false)}>Cancel</Button>
         </Modal.Footer>
       </Modal>    
 

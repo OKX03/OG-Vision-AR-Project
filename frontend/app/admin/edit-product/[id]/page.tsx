@@ -480,7 +480,7 @@ export default function EditProductPage() {
           </div>
 
           <div className="d-flex justify-content-end gap-3">
-            <button className="btn btn-danger" onClick={() => router.back()}>
+            <button className="btn btn-secondary" onClick={() => router.back()}>
               Cancel
             </button>
             <button className="btn btn-success fw-bold" onClick={handleSubmit}>
@@ -499,8 +499,8 @@ export default function EditProductPage() {
           Are you sure to save this product?
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
+          <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
           <Button variant="success" onClick={confirmEdit}>Confirm</Button>
-          <Button variant="danger" onClick={() => setShowConfirm(false)}>Cancel</Button>
         </Modal.Footer>
       </Modal>
 

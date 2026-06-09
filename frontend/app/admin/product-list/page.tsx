@@ -403,8 +403,8 @@ export default function ProductListPage() {
           <p className="text-muted">This action cannot be undone.</p>
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
-          <Button variant="danger" className="px-4" onClick={confirmDelete}>Delete</Button>
-          <Button variant="light" onClick={() => setShowConfirmDelete(false)}>Cancel</Button>
+          <Button variant="secondary" onClick={() => setShowConfirmDelete(false)}>Cancel</Button>
+          <Button variant="danger" className="px-4" onClick={confirmDelete}>Confirm</Button>
         </Modal.Footer>
       </Modal>
 

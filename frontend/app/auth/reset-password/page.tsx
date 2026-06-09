@@ -130,8 +130,8 @@ function ResetPasswordForm() {
             Are you sure you want to reset your password?
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
+          <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
           <Button variant="success" onClick={handleConfirmReset}>Confirm</Button>
-          <Button variant="danger" onClick={() => setShowConfirm(false)}>Cancel</Button>
         </Modal.Footer>
       </Modal>
 

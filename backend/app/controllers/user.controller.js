@@ -14,10 +14,10 @@ const verificationTokens = {};
 exports.register = async (req, res) => {
   try {
     const userByUsername = await User.findOne({ where: { username: req.body.username } });
-    if (userByUsername) return res.status(400).send({ message: "Username is already in use!" });
+    if (userByUsername) return res.status(400).send({ message: "Username is already in use" });
 
     const userByEmail = await User.findOne({ where: { email: req.body.email } });
-    if (userByEmail) return res.status(400).send({ message: "Email is already in use!" });
+    if (userByEmail) return res.status(400).send({ message: "Email is already in use" });
 
     await User.create({
       username: req.body.username,
@@ -53,15 +53,15 @@ exports.login = (req, res) => {
     }
   })
     .then(user => {
-      if (!user) return res.status(404).send({ message: "User Not found." });
+      if (!user) return res.status(404).send({ message: "User not found" });
 
       if (user.account_status === "Unverified") {
-        return res.status(403).send({ message: "Please verify your email first!" });
+        return res.status(403).send({ message: "Please verify your email first" });
       }
 
       const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
       if (!passwordIsValid) {
-        return res.status(401).send({ accessToken: null, message: "Invalid Password!" });
+        return res.status(401).send({ accessToken: null, message: "Incorrect password" });
       }
 
       const token = jwt.sign(
@@ -190,7 +190,7 @@ exports.updateProfile = async (req, res) => {
 
     if (username && username !== user.username) {
       const existing = await User.findOne({ where: { username } });
-      if (existing) return res.status(400).send({ field: "username", message: "Username already taken" });
+      if (existing) return res.status(400).send({ field: "username", message: "Username is already in use" });
     }
 
     await User.update(

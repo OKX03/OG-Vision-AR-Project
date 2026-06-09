@@ -19,9 +19,11 @@
 
       const newErrors: { email?: string } = {};
       if (!email.trim()) newErrors.email = "Email is required";
-      else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Invalid email format";
+      else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email must be a valid email address";
 
       setErrors(newErrors);
+
+      if (Object.keys(newErrors).length > 0) return;
 
       try {
         console.log("Sending email for password recovery:", email);
@@ -43,7 +45,7 @@
           <div className="logo">OG Vision AR</div>
           <div className="welcome">Recover Password 🔐</div>
 
-          <form className="form" onSubmit={handleSubmit}>
+          <form className="form" onSubmit={handleSubmit} noValidate>
             <p className="text-muted small text-center">
               Enter your registered email and we'll send you a reset link.
             </p>

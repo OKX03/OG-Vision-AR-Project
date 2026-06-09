@@ -271,11 +271,11 @@ export default function MyBookingsPage() {
         </Modal.Body>
 
         <Modal.Footer className="justify-content-center">
+          <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
+            Cancel
+          </Button>
           <Button variant="danger" onClick={confirmCancel}>
             Confirm
-          </Button>
-          <Button variant="light" onClick={() => setShowCancelModal(false)}>
-            Back
           </Button>
         </Modal.Footer>
       </Modal>

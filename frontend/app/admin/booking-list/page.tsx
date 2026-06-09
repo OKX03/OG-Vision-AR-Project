@@ -490,11 +490,11 @@ export default function BookingListPage() {
         </Modal.Body>
 
         <Modal.Footer className="justify-content-center">
+          <Button variant="secondary" onClick={() => setShowConfirm(false)}>
+            Cancel
+          </Button>
           <Button variant="success" onClick={confirmUpdateStatus}>
             Confirm
-          </Button>
-          <Button variant="danger" onClick={() => setShowConfirm(false)}>
-            Cancel
           </Button>
         </Modal.Footer>
       </Modal>

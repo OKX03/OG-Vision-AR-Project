@@ -319,8 +319,8 @@ export default function ManageARPage() {
           Are you sure you want to upload <strong>{selectedFile?.name}</strong> as the AR model?
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
-          <Button variant="primary" className="px-4" onClick={confirmUpload}>Confirm</Button>
-          <Button variant="light" onClick={() => setShowConfirmUpload(false)}>Cancel</Button>
+          <Button variant="secondary" onClick={() => setShowConfirmUpload(false)}>Cancel</Button>
+          <Button variant="success" className="px-4" onClick={confirmUpload}>Confirm</Button>
         </Modal.Footer>
       </Modal>
 
@@ -332,8 +332,8 @@ export default function ManageARPage() {
           Are you sure you want to delete the current AR model? This action cannot be undone.
         </Modal.Body>
         <Modal.Footer className="justify-content-center">
-          <Button variant="danger" className="px-4" onClick={confirmDelete}>Delete</Button>
-          <Button variant="light" onClick={() => setShowConfirmDelete(false)}>Cancel</Button>
+          <Button variant="secondary" onClick={() => setShowConfirmDelete(false)}>Cancel</Button>
+          <Button variant="danger" className="px-4" onClick={confirmDelete}>Confirm</Button>
         </Modal.Footer>
       </Modal>
 

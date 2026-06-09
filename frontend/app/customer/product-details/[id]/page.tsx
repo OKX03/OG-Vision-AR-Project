@@ -344,13 +344,11 @@ export default function UserProductDetails() {
   return (
     <div className="container py-5">
 
-      <div className="mb-4">
-        <span
-          className="text-muted fw-semibold text-uppercase small cursor-pointer"
-          onClick={() => router.push("/customer/product-list")}
-        >
-          <i className="bi bi-arrow-left me-2"></i>Back to catalog
-        </span>
+      <div className="d-flex align-items-center mb-4">
+          <button className="btn btn-dark" onClick={() => router.back()}>
+            <i className="bi bi-arrow-left"></i>
+          </button>
+          <span className="ms-2 text-muted fw-semibold text-uppercase small cursor-pointer">Back</span>
       </div>
 
       <div className="row g-5">
@@ -614,10 +612,10 @@ export default function UserProductDetails() {
 
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowConfirm(false)}>
-            Back
+            Cancel
           </Button>
           <Button variant="success" onClick={confirmBooking}>
-            Confirm Booking
+            Confirm
           </Button>
         </Modal.Footer>
       </Modal>
