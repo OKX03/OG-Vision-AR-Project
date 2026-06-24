@@ -5,7 +5,8 @@
 .chatbot-window {
   background-color: #f8f9fa;
   border-radius: 12px;
-  height: 70vh;
+  height: calc(100vh - 240px);
+  min-height: 500px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
