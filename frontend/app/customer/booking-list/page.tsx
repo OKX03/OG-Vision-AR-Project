@@ -183,7 +183,7 @@ export default function MyBookingsPage() {
                   <td>{b.product?.brand} - {b.product?.model}</td>
 
                   <td>
-                    {new Date(b.booking_date).toLocaleDateString()}
+                    {b.booking_date ? b.booking_date.split('T')[0].split('-').reverse().join('-') : ''}
                   </td>
 
                   <td>{b.time_slot}</td>
@@ -282,8 +282,8 @@ export default function MyBookingsPage() {
 
       <Modal show={showSuccess} centered backdrop="static">
         <Modal.Body className="text-center p-4">
-          <h5>Booking Cancelled</h5>
-          <Button onClick={() => setShowSuccess(false)}>OK</Button>
+          <h5>Booking has been cancelled!</h5>
+          <Button variant="primary" onClick={() => setShowSuccess(false)}>Okay</Button>
         </Modal.Body>
       </Modal>
     </div>

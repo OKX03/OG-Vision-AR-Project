@@ -14,7 +14,7 @@ exports.getAllProducts = (req, res) => {
         as: "images"
       },
       {
-        model: db.ar_model,
+        model: ARModel,
         as: "ar_model"
       }
     ]
@@ -41,7 +41,7 @@ exports.getProductById = (req, res) => {
         as: "images"
       },
       {
-        model: db.ar_model,
+        model: ARModel,
         as: "ar_model"
       }
     ]

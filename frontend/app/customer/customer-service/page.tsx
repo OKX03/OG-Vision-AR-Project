@@ -187,7 +187,7 @@ export default function CustomerServicePage() {
           <div className="row mb-3">
             <div className="col-6">
               <p className="fw-bold mb-1" style={{ fontSize: '0.9rem' }}>Contact No:</p>
-              <a href="tel:+601118655866" className="text-dark text-decoration-underline" style={{ fontSize: '0.9rem' }}>+6011-18655866</a>
+              <a href="tel:+601118655866" className="text-dark text-decoration-underline" style={{ fontSize: '0.9rem' }}>+6010-9683633</a>
             </div>
             <div className="col-6">
               <p className="fw-bold mb-1" style={{ fontSize: '0.9rem' }}>Operating Hours:</p>
@@ -199,7 +199,7 @@ export default function CustomerServicePage() {
           <div className="row mb-3">
             <div className="col-6">
               <p className="fw-bold mb-1" style={{ fontSize: '0.9rem' }}>WhatsApps:</p>
-              <a href="https://wa.me/601118655866" target="_blank" rel="noopener noreferrer" className="text-success fs-4">
+              <a href="https://wa.me/60109683633" target="_blank" rel="noopener noreferrer" className="text-success fs-4">
                 <i className="bi bi-whatsapp"></i>
               </a>
             </div>
@@ -212,7 +212,7 @@ export default function CustomerServicePage() {
           <div className="row">
             <div className="col-12">
               <p className="fw-bold mb-1" style={{ fontSize: '0.9rem' }}>Email Address:</p>
-              <a href="mailto:ogopticalwatchsb@gmail.com" className="text-dark text-decoration-underline" style={{ fontSize: '0.9rem' }}>ogopticalwatchsb@gmail.com</a>
+              <a href="mailto:ogopticalwatchsb@gmail.com" className="text-dark text-decoration-underline" style={{ fontSize: '0.9rem' }}>ohkaixuan1@gmail.com</a>
             </div>
           </div>
         </div>

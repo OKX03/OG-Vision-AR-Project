@@ -96,7 +96,7 @@ export default function UserProductDetails() {
       if (currentTotalMinutes >= openTotalMinutes && currentTotalMinutes < cutoffTotalMinutes) {
         setCanBookNow(true);
       } else {
-        setCanBookNow(false);
+        setCanBookNow(true);
       }
     };
 
@@ -527,6 +527,7 @@ export default function UserProductDetails() {
               filterDate={(date) => !isSunday(date)}
               placeholderText="Select booking date"
               className="form-control w-100"
+              dateFormat="dd-MM-yyyy"
             />
           </div>
 
@@ -589,7 +590,7 @@ export default function UserProductDetails() {
             </div>
             <div className="row mb-2">
               <div className="col-4 text-muted small">Date</div>
-              <div className="col-8 fw-semibold">{bookingDate}</div>
+              <div className="col-8 fw-semibold">{bookingDate ? bookingDate.split('-').reverse().join('-') : ''}</div>
             </div>
             <div className="row mb-2">
               <div className="col-4 text-muted small">Time</div>
@@ -622,13 +623,13 @@ export default function UserProductDetails() {
 
       <Modal show={showBannedModal} centered onHide={() => setShowBannedModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Account Suspended</Modal.Title>
+          <Modal.Title>Account Banned</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center p-4">
           <div className="text-danger mb-3">
             <i className="bi bi-ban" style={{ fontSize: "3rem" }}></i>
           </div>
-          <h5>Your account has been suspended.</h5>
+          <h5>Your account has been banned.</h5>
           <p>You are currently unable to make new bookings.</p>
         </Modal.Body>
         <Modal.Footer>

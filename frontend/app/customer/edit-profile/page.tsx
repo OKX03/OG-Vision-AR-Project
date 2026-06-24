@@ -94,12 +94,15 @@ export default function EditProfilePage() {
                 color: "#333", 
                 borderRadius: "0", 
                 borderBottomStyle: "dashed",
-                cursor: "text"
+                cursor: "text",
+                width: "auto",
+                minWidth: "150px"
               }}
               value={profileForm.username}
               onChange={e => setProfileForm({ ...profileForm, username: e.target.value })}
               title="Click to edit username"
             />
+            <span className="text-danger fw-bold ms-1" style={{ fontSize: "1.2rem", marginTop: "-5px" }}>*</span>
             <i className="bi bi-pencil-fill ms-2 text-muted" style={{ fontSize: "0.9rem" }} title="Edit username"></i>
           </div>
           {submitted && errors.username && <div className="text-danger small mt-1">{errors.username}</div>}
@@ -152,7 +155,7 @@ export default function EditProfilePage() {
           </div>
 
           <div className="mb-4 text-start">
-            <label className="form-label text-muted small fw-bold">Gender</label>
+            <label className="form-label text-muted small fw-bold">Gender <span className="text-danger">*</span></label>
             <select
               className={`form-select border-0 bg-light shadow-none ${submitted && errors.gender ? "is-invalid" : ""}`}
               style={{ padding: "12px", borderRadius: "8px", cursor: "pointer" }}

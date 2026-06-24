@@ -115,25 +115,31 @@ export default function AddFAQPage() {
               )}
             </label>
             {!showNewCategory && existingCategories.length > 0 ? (
-              <select
-                className={`form-select ${errors.category ? 'is-invalid' : ''}`}
-                value={existingCategories.includes(newFaq.category) ? newFaq.category : ''}
-                onChange={handleCategorySelect}
-              >
-                <option value="" disabled>Select category...</option>
-                {existingCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-                <option value="NEW_CATEGORY_OPTION" className="text-primary fw-bold">+ Add New Category</option>
-              </select>
+              <>
+                <select
+                  className={`form-select ${errors.category ? 'is-invalid' : ''}`}
+                  value={existingCategories.includes(newFaq.category) ? newFaq.category : ''}
+                  onChange={handleCategorySelect}
+                >
+                  <option value="" disabled>Select category...</option>
+                  {existingCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="NEW_CATEGORY_OPTION" className="text-primary fw-bold">+ Add New Category</option>
+                </select>
+                <div className="invalid-feedback">{errors.category}</div>
+              </>
             ) : (
-              <input
-                type="text"
-                className={`form-control ${errors.category ? 'is-invalid' : ''}`}
-                placeholder="Enter new category name"
-                value={newFaq.category}
-                onChange={e => handleChange('category', e.target.value)}
-              />
+              <>
+                <input
+                  type="text"
+                  className={`form-control ${errors.category ? 'is-invalid' : ''}`}
+                  placeholder="Enter new category name"
+                  value={newFaq.category}
+                  onChange={e => handleChange('category', e.target.value)}
+                />
+                <div className="invalid-feedback">{errors.category}</div>
+              </>
             )}
           </div>
 
@@ -146,6 +152,7 @@ export default function AddFAQPage() {
               value={newFaq.question}
               onChange={e => handleChange('question', e.target.value)}
             />
+            <div className="invalid-feedback">{errors.question}</div>
           </div>
 
           <div className="mb-5">
@@ -157,6 +164,7 @@ export default function AddFAQPage() {
               value={newFaq.answer}
               onChange={e => handleChange('answer', e.target.value)}
             />
+            <div className="invalid-feedback">{errors.answer}</div>
           </div>
 
           <div className="d-flex justify-content-end gap-3">
