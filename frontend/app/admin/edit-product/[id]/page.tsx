@@ -29,9 +29,13 @@ export default function EditProductPage() {
   });
 
   const [faceShapeOptions] = useState(['Oval', 'Round', 'Square', 'Heart', 'Oblong']);
+  const colorOptions = (namer as any).lists.ntc;
   const [selectedFaceShapes, setSelectedFaceShapes] = useState<string[]>([]);
   const [colorName, setColorName] = useState('');
   const [errors, setErrors] = useState<any>({});
+  
+  const [colorSearch, setColorSearch] = useState('');
+  const [showColorDropdown, setShowColorDropdown] = useState(false);
 
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [sideImage, setSideImage] = useState<File | null>(null);
@@ -76,6 +80,9 @@ export default function EditProductPage() {
       );
 
       setColorName(
+        data.color ? namer(data.color).ntc[0].name : ''
+      );
+      setColorSearch(
         data.color ? namer(data.color).ntc[0].name : ''
       );
 
@@ -304,15 +311,73 @@ export default function EditProductPage() {
             <div className="col-md-3">
               <label className="form-label fw-medium">Frame Color <span className='text-danger'>*</span></label>
               <div className="d-flex align-items-center gap-2">
-                <input
-                  type="color"
-                  className={`form-control form-control-color ${errors.color ? 'is-invalid' : ''}`}
-                  value={newProduct.color || '#000000'}
-                  onChange={(e) => updateColorName(e.target.value)}
-                />
-                <span className="badge bg-secondary">{colorName || 'Select color'}</span>
-                {errors.color && <div className="text-danger">{errors.color}</div>}
+                <div className="position-relative flex-grow-1">
+                  <input
+                    type="text"
+                    className={`form-control ${errors.color ? 'is-invalid' : ''}`}
+                    placeholder="Type color name..."
+                    value={colorSearch}
+                    onChange={(e) => {
+                      setColorSearch(e.target.value);
+                      setShowColorDropdown(true);
+                      
+                      const matched = colorOptions.find((c: any) => c.name.toLowerCase() === e.target.value.toLowerCase());
+                      if (matched) {
+                        const validHex = matched.hex.startsWith('#') ? matched.hex : '#' + matched.hex;
+                        handleChange('color', validHex);
+                        setColorName(matched.name);
+                      } else {
+                        handleChange('color', '');
+                        setColorName('');
+                      }
+                    }}
+                    onFocus={() => setShowColorDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowColorDropdown(false), 200)}
+                  />
+                  {showColorDropdown && (
+                    <div className="dropdown-menu show w-100 shadow-sm" style={{ maxHeight: '200px', overflowY: 'auto', position: 'absolute', zIndex: 1000, top: '100%', left: 0 }}>
+                      {colorOptions
+                        .filter((c: any) => c.name.toLowerCase().includes(colorSearch.toLowerCase()))
+                        .slice(0, 50)
+                        .map((c: any) => (
+                        <button 
+                          key={c.hex} 
+                          className="dropdown-item d-flex align-items-center gap-2 py-2"
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            const validHex = c.hex.startsWith('#') ? c.hex : '#' + c.hex;
+                            handleChange('color', validHex);
+                            setColorName(c.name);
+                            setColorSearch(c.name);
+                            setShowColorDropdown(false);
+                          }}
+                        >
+                          <span className="border border-secondary-subtle" style={{width: 16, height: 16, backgroundColor: c.hex.startsWith('#') ? c.hex : '#' + c.hex, borderRadius: '50%', display: 'inline-block'}}></span>
+                          {c.name}
+                        </button>
+                      ))}
+                      {colorOptions.filter((c: any) => c.name.toLowerCase().includes(colorSearch.toLowerCase())).length === 0 && (
+                        <div className="dropdown-item text-muted">No colors found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <span 
+                  className="badge border shadow-sm" 
+                  style={{ 
+                    backgroundColor: newProduct.color || 'transparent', 
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    flexShrink: 0
+                  }} 
+                  title={colorName}
+                ></span>
               </div>
+              {errors.color && <div className="text-danger mt-1" style={{ fontSize: '0.875em' }}>{errors.color}</div>}
             </div>
             {/* Frame Shape */}
             <div className="col-md-3">
@@ -493,7 +558,7 @@ export default function EditProductPage() {
 
       <Modal show={showConfirm} centered onHide={() => setShowConfirm(false)}>
         <Modal.Header>
-          <Modal.Title>Confirm Add Product</Modal.Title>
+          <Modal.Title>Confirm Edit Product</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           Are you sure to save this product?
@@ -535,7 +600,7 @@ export default function EditProductPage() {
           <div className="text-success mb-3">
             <i className="bi bi-check-circle-fill" style={{ fontSize: "3rem" }}></i>
           </div>
-          <h5>Product Successfully Saved!</h5>
+          <h5>Product Successfully Updated!</h5>
           <Button
             className="btn btn-success mt-3 px-5"
             onClick={() => {
