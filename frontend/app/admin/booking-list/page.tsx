@@ -360,8 +360,25 @@ export default function BookingListPage() {
                           <div>{b.user?.email}</div>
                           {b.user?.phone_number && <div className="text-muted small"><i className="bi bi-telephone-fill me-1"></i>+60 {b.user.phone_number}</div>}
                         </td>
-                        <td>{b.product?.brand} - {b.product?.model}</td>
-                        <td>{b.booking_date}</td>
+                        <td>
+                          {b.product?.brand} - {b.product?.model}
+                          {b.product?.quantity !== undefined && (
+                            b.product.quantity === 0 ? (
+                              <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 ms-2">
+                                Sold Out (0)
+                              </span>
+                            ) : b.product.quantity <= 3 ? (
+                              <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-50 px-2 py-1 ms-2">
+                                Low ({b.product.quantity})
+                              </span>
+                            ) : (
+                              <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 ms-2">
+                                In Stock ({b.product.quantity})
+                              </span>
+                            )
+                          )}
+                        </td>
+                        <td>{b.booking_date ? b.booking_date.split('T')[0].split('-').reverse().join('-') : ''}</td>
                         <td>{b.time_slot}</td>
                         <td>{getStatusBadge(b.status)}</td>
                         <td>{renderActions(b)}</td>
@@ -455,8 +472,25 @@ export default function BookingListPage() {
             <div className="p-2">
               <p className="mb-2"><strong>User:</strong> {selectedEvent.user?.username} ({selectedEvent.user?.email})</p>
               {selectedEvent.user?.phone_number && <p className="mb-2"><strong>Phone:</strong> +60 {selectedEvent.user.phone_number}</p>}
-              <p className="mb-2"><strong>Product:</strong> {selectedEvent.product?.brand} - {selectedEvent.product?.model}</p>
-              <p className="mb-2"><strong>Date:</strong> {selectedEvent.booking_date}</p>
+              <p className="mb-2">
+                <strong>Product:</strong> {selectedEvent.product?.brand} - {selectedEvent.product?.model}
+                {selectedEvent.product?.quantity !== undefined && (
+                  selectedEvent.product.quantity === 0 ? (
+                    <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 ms-2">
+                      Sold Out (0)
+                    </span>
+                  ) : selectedEvent.product.quantity <= 3 ? (
+                    <span className="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-50 px-2 py-1 ms-2">
+                      Low ({selectedEvent.product.quantity})
+                    </span>
+                  ) : (
+                    <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 ms-2">
+                      In Stock ({selectedEvent.product.quantity})
+                    </span>
+                  )
+                )}
+              </p>
+              <p className="mb-2"><strong>Date:</strong> {selectedEvent.booking_date ? selectedEvent.booking_date.split('T')[0].split('-').reverse().join('-') : ''}</p>
               <p className="mb-2"><strong>Time:</strong> {selectedEvent.time_slot}</p>
               <p className="mb-0"><strong>Status:</strong> {getStatusBadge(selectedEvent.status)}</p>
             </div>

@@ -1,6 +1,7 @@
 const db = require("../models");
 const mailService = require("../services/mail.service");
 const Booking = db.booking;
+const User = db.user;
 const Product = db.product;
 
 exports.createBooking = async (req, res) => {
@@ -24,8 +25,8 @@ exports.createBooking = async (req, res) => {
 
     const bookingWithDetails = await Booking.findByPk(booking.booking_id, {
       include: [
-        { model: db.user, as: "user" },
-        { model: db.product, as: "product" }
+        { model: User, as: "user" },
+        { model: Product, as: "product" }
       ]
     });
 
@@ -44,8 +45,8 @@ exports.getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.findAll({
       include: [
-        { model: db.user, as: "user", attributes: ["user_id", "username", "email", "phone_number"] },
-        { model: db.product, as: "product", attributes: ["product_id", "brand", "model"] }
+        { model: User, as: "user", attributes: ["user_id", "username", "email", "phone_number"] },
+        { model: Product, as: "product", attributes: ["product_id", "brand", "model", "quantity"] }
       ],
       order: [["booking_date", "ASC"]]
     });
@@ -61,8 +62,8 @@ exports.getBookingById = async (req, res) => {
     const { id } = req.params;
     const booking = await Booking.findByPk(id, {
       include: [
-        { model: db.user, as: "user", attributes: ["user_id", "name", "email"] },
-        { model: db.product, as: "product", attributes: ["product_id", "brand", "model"] }
+        { model: User, as: "user", attributes: ["user_id", "name", "email"] },
+        { model: Product, as: "product", attributes: ["product_id", "brand", "model", "quantity"] }
       ]
     });
     if (!booking) return res.status(404).json({ message: "Booking not found" });
@@ -80,7 +81,7 @@ exports.getBookingsByUserId = async (req, res) => {
     const bookings = await Booking.findAll({
       where: { user_id: userId },
       include: [
-        { model: db.product, as: "product", attributes: ["product_id", "brand", "model"] }
+        { model: Product, as: "product", attributes: ["product_id", "brand", "model", "quantity"] }
       ],
       order: [["booking_date", "ASC"]]
     });
@@ -107,7 +108,7 @@ exports.updateBooking = async (req, res) => {
       oldStatus === "Accepted" || oldStatus === "Pending" &&
       ["Rejected", "Cancelled", "No Show"].includes(data.status)
     ) {
-      const product = await db.product.findByPk(booking.product_id);
+      const product = await Product.findByPk(booking.product_id);
 
       if (product) {
         await product.update({
@@ -124,7 +125,7 @@ exports.updateBooking = async (req, res) => {
         }
       });
       if (noShowCount >= 3) {
-        await db.user.update(
+        await User.update(
           { account_status: "Banned" },
           { where: { user_id: booking.user_id } }
         );
@@ -135,8 +136,8 @@ exports.updateBooking = async (req, res) => {
     if (statusesRequiringEmail.includes(data.status) && oldStatus !== data.status) {
       const bookingWithDetails = await Booking.findByPk(id, {
         include: [
-          { model: db.user, as: "user" },
-          { model: db.product, as: "product" }
+          { model: User, as: "user" },
+          { model: Product, as: "product" }
         ]
       });
 
