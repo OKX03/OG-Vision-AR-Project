@@ -262,11 +262,24 @@ export default function ManageARPage() {
             >
               <canvas
                 ref={canvasRef}
-                style={{ width: "100%", height: "100%", display: "block" }}
+                style={{ 
+                  width: "100%", 
+                  height: "100%", 
+                  display: "block",
+                  visibility: productModel?.file_path ? "visible" : "hidden"
+                }}
               />
-              <div className="position-absolute bottom-0 end-0 p-2 text-muted small" style={{ pointerEvents: 'none' }}>
-                <i className="bi bi-mouse me-1"></i> Drag to rotate • Scroll to zoom
-              </div>
+              
+              {productModel?.file_path ? (
+                <div className="position-absolute bottom-0 end-0 p-2 text-muted small" style={{ pointerEvents: 'none' }}>
+                  <i className="bi bi-mouse me-1"></i> Drag to rotate • Scroll to zoom
+                </div>
+              ) : (
+                <div className="position-absolute d-flex flex-column justify-content-center align-items-center text-muted" style={{ zIndex: 10 }}>
+                  <i className="bi bi-box text-secondary" style={{ fontSize: "3rem" }}></i>
+                  <p className="mt-3 mb-0 text-center px-4 fw-medium">No model linked to this product. Please upload a model to see the preview.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -297,8 +310,8 @@ export default function ManageARPage() {
                         yaw: productModel.yaw ?? 0,
                         roll: productModel.roll ?? 0,
                         scale: productModel.scale ?? 1.0,
-                        yOffset: productModel.y_offset ?? -0.01,
-                        zOffset: productModel.z_offset ?? 0.05
+                        yOffset: productModel.y_offset ?? 0,
+                        zOffset: productModel.z_offset ?? 0
                       }}
                       onSaveCalibration={handleSaveCalibration}
                     />

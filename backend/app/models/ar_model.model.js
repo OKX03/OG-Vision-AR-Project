@@ -41,11 +41,11 @@ module.exports = (sequelize, Sequelize) => {
     },
     y_offset: {
       type: Sequelize.FLOAT,
-      defaultValue: -0.01
+      defaultValue: 0
     },
     z_offset: {
       type: Sequelize.FLOAT,
-      defaultValue: 0.05
+      defaultValue: 0
     }
   }, {
     tableName: "ar_model",

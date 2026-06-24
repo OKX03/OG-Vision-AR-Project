@@ -86,6 +86,31 @@ const processImage = (faceCanvas: HTMLCanvasElement): ort.Tensor => {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(faceCanvas, 0, 0, targetSize, targetSize);
+
+    /*
+    if (typeof window !== "undefined") {
+      let debugDiv = document.getElementById("debug-onnx-input");
+      if (!debugDiv) {
+        debugDiv = document.createElement("div");
+        debugDiv.id = "debug-onnx-input";
+        debugDiv.style.position = "fixed";
+        debugDiv.style.bottom = "10px";
+        debugDiv.style.right = "10px";
+        debugDiv.style.zIndex = "9999";
+        debugDiv.style.background = "white";
+        debugDiv.style.padding = "5px";
+        debugDiv.style.border = "2px solid red";
+        debugDiv.style.borderRadius = "8px";
+        document.body.appendChild(debugDiv);
+      }
+      debugDiv.innerHTML = "<div style='font-size:12px; font-weight:bold; color:black; margin-bottom:5px;'>ONNX Input (224x224)</div>";
+      const debugImg = document.createElement("img");
+      debugImg.src = resizeCanvas.toDataURL("image/jpeg", 0.9);
+      debugImg.style.width = "150px";
+      debugImg.style.height = "150px";
+      debugDiv.appendChild(debugImg);
+    }
+    */
   }
 
   // Convert the resized image data to a Float32Array normalized to [0,1]
@@ -102,6 +127,8 @@ const processImage = (faceCanvas: HTMLCanvasElement): ort.Tensor => {
   resizeCanvas.width = 0; resizeCanvas.height = 0;
   return new ort.Tensor("float32", float32Data, [1, 3, targetSize, targetSize]);
 };
+
+let sharedFaceShapeModelPromise: Promise<ort.InferenceSession> | null = null;
 
 export default function VirtualTryOnPage() {
   const router = useRouter();
@@ -155,6 +182,7 @@ export default function VirtualTryOnPage() {
 
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showFileError, setShowFileError] = useState(false);
   const [isShapeExpanded, setIsShapeExpanded] = useState(true);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -197,13 +225,15 @@ export default function VirtualTryOnPage() {
       }
 
       try {
-        ort.env.wasm.numThreads = 1;
-        ort.env.wasm.simd = false; 
-        
-        const session = await ort.InferenceSession.create("/face_shape_model/model.onnx", {
-          executionProviders: ["wasm"], 
-          graphOptimizationLevel: "all"
-        });
+        if (!sharedFaceShapeModelPromise) {
+          ort.env.wasm.numThreads = 1;
+          ort.env.wasm.simd = false; 
+          sharedFaceShapeModelPromise = ort.InferenceSession.create("/face_shape_model/model.onnx", {
+            executionProviders: ["wasm"], 
+            graphOptimizationLevel: "all"
+          });
+        }
+        const session = await sharedFaceShapeModelPromise;
         setFaceShapeModel(session);
       } catch (err) { console.error("ONNX Load Error:", err); }
 
@@ -321,14 +351,23 @@ export default function VirtualTryOnPage() {
         if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
       });
 
-      //Determine alignment based on bounding box size and position
+      // Standardize distance based on device screen width (horizontal FOV) to lock perspective
       const w = maxX - minX;
+      
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
       let newHint = "Align your face";
       let aligned = false;
       
-      if (w < 0.2) newHint = "Move closer"; else if (w > 0.6) newHint = "Move further away";
-      else if (minX < 0.2) newHint = "Move left"; else if (maxX > 0.8) newHint = "Move right";
-      else if (minY < 0.2) newHint = "Move down"; else if (maxY > 0.8) newHint = "Move up";
+      // Strict constraints based purely on width (w) to ensure 100% consistent perspective 
+      // distortion across all devices.
+      if (w < 0.30) newHint = "Move closer"; 
+      else if (w > 0.38) newHint = "Move further away";
+      else if (centerX < 0.42) newHint = "Move left"; 
+      else if (centerX > 0.58) newHint = "Move right";
+      else if (centerY < 0.40) newHint = "Move down"; 
+      else if (centerY > 0.60) newHint = "Move up";
       else {
         aligned = true;
         newHint = "Perfect! Click Scan";
@@ -461,42 +500,60 @@ export default function VirtualTryOnPage() {
         const yMin = Math.min(...ys); // Most top point
         const yMax = Math.max(...ys); // Most bottom point
 
-        // Add padding to bounding box to ensure forehead and jawline are included
-        const padX = (xMax - xMin) * 0.2; 
-        const padY = (yMax - yMin) * 0.3; 
-        
-        const x1 = Math.max(0, xMin - padX); // Left boundary 
-        const x2 = Math.min(cw, xMax + padX); // Right boundary 
-        const y1 = Math.max(0, yMin - padY);  // Top boundary 
-        const y2 = Math.min(ch, yMax + padY); // Bottom boundary
+        // Helper function to run inference on a specific bounding box variation
+        const runInferenceVariation = async (cropParams: {px: number, py: number, dy: number}): Promise<Float32Array | null> => {
+           const padX = (xMax - xMin) * cropParams.px; 
+           const padY = (yMax - yMin) * cropParams.py; 
+           const offsetY = (yMax - yMin) * cropParams.dy;
+           
+           const x1 = Math.max(0, xMin - padX); // Left boundary 
+           const x2 = Math.min(cw, xMax + padX); // Right boundary 
+           const y1 = Math.max(0, yMin - padY + offsetY);  // Top boundary 
+           const y2 = Math.min(ch, yMax + padY + offsetY); // Bottom boundary
 
-        // Crop the aligned face region
-        const faceCanvas = document.createElement("canvas");
-        faceCanvas.width = Math.round(x2 - x1); 
-        faceCanvas.height = Math.round(y2 - y1);
-        const fCtx = faceCanvas.getContext("2d", { willReadFrequently: true });
-      
-        if (fCtx) {
+           const faceCanvas = document.createElement("canvas");
+           faceCanvas.width = Math.round(x2 - x1); 
+           faceCanvas.height = Math.round(y2 - y1);
+           const fCtx = faceCanvas.getContext("2d", { willReadFrequently: true });
+         
+           if (!fCtx) return null;
            fCtx.fillStyle = "black";
            fCtx.fillRect(0, 0, faceCanvas.width, faceCanvas.height);
            fCtx.drawImage(alignedCanvas, x1, y1, x2 - x1, y2 - y1, 0, 0, faceCanvas.width, faceCanvas.height);
-        }
+
+           try {
+             const inputTensor = processImage(faceCanvas);
+             const feeds = { [faceShapeModel.inputNames[0]]: inputTensor };
+             const output = await faceShapeModel.run(feeds);
+             return output[faceShapeModel.outputNames[0]].data as Float32Array;
+           } catch (e) {
+             return null;
+           }
+        };
 
         try {
-          // Run ONNX model inference on the cropped face image
-          const inputTensor = processImage(faceCanvas);
-          const feeds = { [faceShapeModel.inputNames[0]]: inputTensor };
-          const output = await faceShapeModel.run(feeds);
-          const data = output[faceShapeModel.outputNames[0]].data as Float32Array;
-          const classIdx = data.indexOf(Math.max(...Array.from(data)));
-          resolve({ shape: FACE_SHAPES[classIdx], prob: Math.max(...Array.from(data)) });
+          const startTime = performance.now();
+          
+          // Reverted TTA Ensemble for speed. Running single standard inference.
+          const data = await runInferenceVariation({px: 0.20, py: 0.30, dy: 0});
+          
+          const endTime = performance.now();
+          console.log(`ONNX Inference took: ${(endTime - startTime).toFixed(2)} ms`);
+
+          if (data) {
+             const dataArray = Array.from(data);
+             const classIdx = dataArray.indexOf(Math.max(...dataArray));
+             resolve({ shape: FACE_SHAPES[classIdx], prob: Math.max(...dataArray) });
+          } else {
+             resolve(null);
+          }
         } catch (error) { 
           console.error("ONNX inference failed:", error);
           resolve(null); 
         } 
         finally {
           alignedCanvas.width = 0; alignedCanvas.height = 0;
-          faceCanvas.width = 0; faceCanvas.height = 0; img.src = "";
+          img.src = "";
         }
       };
     });
@@ -538,6 +595,13 @@ export default function VirtualTryOnPage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setShowFileError(true);
+      e.target.value = '';
+      return;
+    }
 
     killPageCamera(); 
     
@@ -630,9 +694,18 @@ export default function VirtualTryOnPage() {
 
       <div className="vto-top">
         <div className="vto-left">
-          {appStage === "SCANNING" && productId && (
-            <button className="back-btn" onClick={() => router.back()}>← back</button>
-          )}
+          <div className="d-flex align-items-center mb-3 mb-md-4">
+            <button className="btn btn-dark" onClick={() => {
+              if (appStage === "TRY_ON") resetToScanning();
+              else router.back();
+            }}>
+              <i className="bi bi-arrow-left"></i>
+            </button>
+            <span className="ms-2 text-muted fw-semibold text-uppercase small cursor-pointer" onClick={() => {
+              if (appStage === "TRY_ON") resetToScanning();
+              else router.back();
+            }}>Back</span>
+          </div>
 
           {appStage === "TRY_ON" && (
             <div className="shape-result">
@@ -879,7 +952,20 @@ export default function VirtualTryOnPage() {
         <Modal.Header closeButton><Modal.Title style={{ color: 'black' }}>Detection Failed</Modal.Title></Modal.Header>
         <Modal.Body className="text-center p-4">
           <p style={{ color: '#333' }}>{errorMessage}</p>
-          <Button variant="danger" onClick={() => {setShowErrorModal(false); if (tryOnMode === "realtime") resetToScanning();}} className="mt-3">OK</Button>
+          <Button variant="danger" onClick={() => {setShowErrorModal(false); if (tryOnMode === "realtime") resetToScanning();}} className="mt-3">Okay</Button>
+        </Modal.Body>
+      </Modal>
+
+      <Modal show={showFileError} centered onHide={() => setShowFileError(false)}>
+        <Modal.Body className="text-center p-4">
+          <div className="text-danger mb-3">
+            <i className="bi bi-file-earmark-x" style={{ fontSize: "3rem" }}></i>
+          </div>
+          <h5 style={{ color: 'black' }}>Invalid File Format!</h5>
+          <p className="text-muted">Only <strong>.jpg, .jpeg,</strong> and <strong>.png</strong> files are supported for photo try-on.</p>
+          <Button variant="danger" className="px-4" onClick={() => setShowFileError(false)}>
+            Close
+          </Button>
         </Modal.Body>
       </Modal>
     </div>
