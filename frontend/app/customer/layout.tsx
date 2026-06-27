@@ -3,6 +3,7 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { userService } from '@/services/user.service';
+import { sharedOnnxFaceShapeService } from '@/services/onnx.service';
 import RoleGuard from '@/guard/role-guard';
 import './layout.css';
 
@@ -20,6 +21,11 @@ export default function UserLayout({ children }: Props) {
     
     // Preload ONNX model to ensure efficiency when opening the virtual try-on page
     fetch('/face_shape_model/model.onnx', { cache: 'force-cache' }).catch(() => {});
+    
+    // Globally initialize the ONNX face shape model in the background
+    // This dramatically boosts VTO loading times without crashing memory, 
+    // because it uses dynamic import for the heavy WASM binaries!
+    sharedOnnxFaceShapeService.init();
   }, []);
 
   const logout = async () => {

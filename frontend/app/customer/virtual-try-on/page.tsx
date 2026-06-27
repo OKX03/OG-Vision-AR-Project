@@ -9,6 +9,7 @@ import { Modal, Button } from "react-bootstrap";
 import { FaceLandmarkerService, sharedFaceLandmarkerService } from "@/services/face-landmarker.service";
 import VirtualTryOnCanvas from "@/components/virtual-try-on-canvas";
 import { userService } from "@/services/user.service";
+import { sharedOnnxFaceShapeService } from "@/services/onnx.service";
 import "./virtual-try-on.css";
 
 type Product = {
@@ -128,8 +129,6 @@ const processImage = (faceCanvas: HTMLCanvasElement): ort.Tensor => {
   return new ort.Tensor("float32", float32Data, [1, 3, targetSize, targetSize]);
 };
 
-let sharedFaceShapeModelPromise: Promise<ort.InferenceSession> | null = null;
-
 export default function VirtualTryOnPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -225,16 +224,8 @@ export default function VirtualTryOnPage() {
       }
 
       try {
-        if (!sharedFaceShapeModelPromise) {
-          ort.env.wasm.numThreads = 1;
-          ort.env.wasm.simd = false; 
-          sharedFaceShapeModelPromise = ort.InferenceSession.create("/face_shape_model/model.onnx", {
-            executionProviders: ["wasm"], 
-            graphOptimizationLevel: "all"
-          });
-        }
-        const session = await sharedFaceShapeModelPromise;
-        setFaceShapeModel(session);
+        const session = await sharedOnnxFaceShapeService.getSession();
+        if (session) setFaceShapeModel(session);
       } catch (err) { console.error("ONNX Load Error:", err); }
 
       try {
@@ -305,7 +296,13 @@ export default function VirtualTryOnPage() {
   const startCamera = async () => {
     try {
       killPageCamera();
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          height: { ideal: 720 } // Only request ideal height to preserve native aspect ratio
+        },
+      });
+
       if (!isMountedRef.current) { stream.getTracks().forEach(t => t.stop()); return; }
       
       streamRef.current = stream;
@@ -360,8 +357,7 @@ export default function VirtualTryOnPage() {
       let newHint = "Align your face";
       let aligned = false;
       
-      // Strict constraints based purely on width (w) to ensure 100% consistent perspective 
-      // distortion across all devices.
+      // Strict constraints based purely on width (w) to ensure 100% consistent perspective distortion across all devices.
       if (w < 0.30) newHint = "Move closer"; 
       else if (w > 0.38) newHint = "Move further away";
       else if (centerX < 0.42) newHint = "Move left"; 
@@ -874,6 +870,9 @@ export default function VirtualTryOnPage() {
       <div className="vto-bottom product-area">
         {appStage === "SCANNING" && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            <div className="text-muted small mb-2 text-center" style={{ maxWidth: '350px' }}>
+              <strong>Tip:</strong> Please remove any glasses and face the camera directly for accurate face shape detection.
+            </div>
             <button 
               onClick={handleLiveScan} 
               className="scan-btn" 

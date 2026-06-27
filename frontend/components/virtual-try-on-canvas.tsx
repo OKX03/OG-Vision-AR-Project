@@ -59,7 +59,6 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  let cameraAlertTriggered = false;
 
   const occluderRef = useRef<THREE.Mesh | null>(null);
   const headBulkRef = useRef<THREE.Mesh | null>(null);
@@ -75,7 +74,7 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
   const [calib, setCalib] = useState(initialCalibration || {
     pitch: 0, yaw: 0, roll: 0,
     scale: 1.0,
-    yOffset: -0.01, zOffset: 0.05
+    yOffset: 0, zOffset: 0
   });
 
   useEffect(() => {
@@ -85,7 +84,7 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
       setCalib({
         pitch: 0, yaw: 0, roll: 0,
         scale: 1.0,
-        yOffset: -0.01, zOffset: 0.05
+        yOffset: 0, zOffset: 0
       });
     }
   }, [initialCalibration]);
@@ -226,8 +225,12 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: {
+          facingMode: "user",
+          height: { ideal: 720 }
+        },
       });
+
 
       if (!mountedRef.current) {
         stream.getTracks().forEach((t) => t.stop());
@@ -306,7 +309,7 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
     cameraRef.current = camera;
     rendererRef.current = renderer;
 
-    // Hide FPS stats for clean screenshots
+    // FPS stats 
     /*
     if (!statsRef.current) {
       const stats = new Stats();
@@ -363,7 +366,7 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
     sceneRef.current.add(headBulkMesh);
     headBulkRef.current = headBulkMesh;
 
-    // Add a neck bulk to cover the area below the face to prevent glasses from rendering behind the neck
+    // Add a neck bulk to cover the area below the face to prevent glasses frorendering behind the neck
     const neckBulkGeometry = new THREE.CylinderGeometry(0.55, 0.55, 3, 32);
     const neckBulkMesh = new THREE.Mesh(neckBulkGeometry, material);
     neckBulkMesh.renderOrder = -1;
@@ -587,7 +590,7 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
     }
     const sm = smoothedLm.current;
 
-    // Phase 2: Measuring Tracking Stability (Jitter Reduction)
+    // Measuring Tracking Stability (Jitter Reduction)
     if (Math.random() < 0.05) {
         const rawNoseX = staticImageSrc ? lm[1].x : (1.0 - lm[1].x);
         const smoothNoseX = sm[1].x;
@@ -673,19 +676,44 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
     );
     targetQuat.multiply(correctionQuat);
 
-    // Use overall face width (distance between temples 234 and 454) for more consistent scaling across different face shapes
-    // Calculate the true physical 3D width of the face using raw MediaPipe coordinates.
+    // MediaPipe landmarks 468 and 473 track the dynamic irises. If the user turns their head 
+    // but keeps looking at the screen, the eyeballs rotate, causing the PD to physically shrink!
+    // To prevent the glasses from shrinking when turning the head, need use the rigid anatomical 
+    // eye socket centers (average of inner and outer eye corners) instead of the dynamic irises.
+    const leftEyeOuter = sm[33];
+    const leftEyeInner = sm[133];
+    const rightEyeOuter = sm[263];
+    const rightEyeInner = sm[362];
+    
+    const leftPupilLm = {
+      x: (leftEyeOuter.x + leftEyeInner.x) / 2,
+      y: (leftEyeOuter.y + leftEyeInner.y) / 2,
+      z: (leftEyeOuter.z + leftEyeInner.z) / 2
+    };
+    
+    const rightPupilLm = {
+      x: (rightEyeOuter.x + rightEyeInner.x) / 2,
+      y: (rightEyeOuter.y + rightEyeInner.y) / 2,
+      z: (rightEyeOuter.z + rightEyeInner.z) / 2
+    };
+    
+    // Calculate the true physical 3D PD using raw MediaPipe coordinates.
     // This perfectly bypasses FOV perspective distortions and is rotation-invariant!
     const vw = source instanceof HTMLVideoElement ? (source.videoWidth || 640) : (source.naturalWidth || 640);
     const vh = source instanceof HTMLVideoElement ? (source.videoHeight || 480) : (source.naturalHeight || 480);
     const { scaleZ } = getNdc({ x: 0, y: 0 }, source);
-    const dx = sm[454].x - sm[234].x;
-    const dy = (sm[454].y - sm[234].y) * (vh / vw); 
-    const dz = sm[454].z - sm[234].z;
-    const rawFaceWidth = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const dx = rightPupilLm.x - leftPupilLm.x;
+    const dy = (rightPupilLm.y - leftPupilLm.y) * (vh / vw); 
+    const dz = rightPupilLm.z - leftPupilLm.z;
+    const rawPD = Math.sqrt(dx * dx + dy * dy + dz * dz);
     
     // Scale to Three.js world units
-    const faceWidth = rawFaceWidth * scaleZ * screenWidthAtDist;
+    const physicalPD = rawPD * scaleZ * screenWidthAtDist;
+    
+    // While the paper states wr = 2 * PD, a multiplier of 2 results in frames that are too small.
+    // The average frame width is usually ~2.2x to 2.3x the PD. 
+    // We use 2.25 to accurately map the PD to the full frame width (temple-to-temple).
+    const faceWidth = 2.25 * physicalPD;
     // Calculate the target position by applying the Y and Z offsets from calibration, scaled by the face width
     const targetPos = pBridge.clone()
       .add(yAxis.clone().multiplyScalar(currentCalib.yOffset * faceWidth * 6))
