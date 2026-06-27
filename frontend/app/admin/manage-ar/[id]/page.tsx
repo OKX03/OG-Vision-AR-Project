@@ -245,6 +245,7 @@ export default function ManageARPage() {
                 className="fw-bold d-flex align-items-center justify-content-center"
                 style={{ minWidth: "160px" }}
                 onClick={handleDeleteClick}
+                disabled={!productModel?.file_path}
               >
                 <i className="bi bi-trash me-2"></i>
                 Delete Model
