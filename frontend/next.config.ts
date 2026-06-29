@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    proxyClientMaxBodySize: '50mb',
+  },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_API_URL || 'http://192.168.1.110:8080';
+    const backendUrl = process.env.BACKEND_API_URL;
     return [
       {
         source: '/api/:path*',

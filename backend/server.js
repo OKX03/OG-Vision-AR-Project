@@ -8,11 +8,6 @@ const multer = require("multer");
 
 const app = express();
 
-// var corsOptions = {
-//   credentials: true,
-//   origin: ["http://localhost:3000", "http://192.168.1.112:3000"]
-// };
-
 var corsOptions = {
   credentials: true,
   origin: true
@@ -32,17 +27,6 @@ require("./app/routes/booking.route")(app);
 require("./app/routes/faq.route")(app);
 require("./app/routes/chatbot.route")(app);
 require("./app/cron/booking.cron"); 
-
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public', 'models')),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_')),
-});
-const upload = multer({ storage });
-
-app.post('/upload-model', upload.single('model'), (req, res) => {
-  res.json({ ok: true, path: `/models/${req.file.filename}` });
-})
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;

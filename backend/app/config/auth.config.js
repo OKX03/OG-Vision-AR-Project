@@ -1,4 +1,4 @@
 module.exports = {
     secret: "billion-secret-key",
-    jwtExpiration: 1800,            
+    jwtExpiration: 86400, // 24 hours   
 };
