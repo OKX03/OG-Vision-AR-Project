@@ -821,12 +821,12 @@ const VirtualTryOnCanvas: React.FC<Props> = ({ modelPath, isAdminMode = false, i
         />
       </div>
 
-      <button
+      {/* <button
         style={{ width: '100%', marginTop: '10px', background: '#00ffcc', color: 'black', padding: '10px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
         onClick={() => setDebugMode(!debugMode)}
       >
         {debugMode ? 'Hide Mask' : 'Show Mask'}
-      </button>
+      </button> */}
 
       {onSaveCalibration && (
         <button
