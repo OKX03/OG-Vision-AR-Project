@@ -236,12 +236,12 @@ export default function VirtualTryOnPage() {
           model: item.model, 
           color: item.color,
           colorName: item.color ? namer(item.color).ntc[0].name : "",
-          arModel: item.ar_model ? `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${item.ar_model.file_path}` : null,
+          arModel: item.ar_model ? (item.ar_model.file_path.startsWith('http') ? item.ar_model.file_path : `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${item.ar_model.file_path}`) : null,
           calibration: item.ar_model ? {
             pitch: item.ar_model.pitch ?? 0, yaw: item.ar_model.yaw ?? 0, roll: item.ar_model.roll ?? 0,
             scale: item.ar_model.scale ?? 1.0, yOffset: item.ar_model.y_offset ?? -0.01, zOffset: item.ar_model.z_offset ?? 0.05
           } : undefined,
-          frontImage: item.images?.find((i: any) => i.view_type === "front") ? `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${item.images.find((i: any) => i.view_type === "front").image_url}` : "",
+          frontImage: item.images?.find((i: any) => i.view_type === "front") ? (item.images.find((i: any) => i.view_type === "front").image_url.startsWith('http') ? item.images.find((i: any) => i.view_type === "front").image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${item.images.find((i: any) => i.view_type === "front").image_url}`) : "",
           faceShape: item.face_shape ? (Array.isArray(item.face_shape) ? item.face_shape : item.face_shape.split("_").map((s: string) => s.trim().toLowerCase()).filter(Boolean)) : [],
         }));
 

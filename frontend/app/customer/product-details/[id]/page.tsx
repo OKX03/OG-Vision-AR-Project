@@ -79,7 +79,7 @@ export default function UserProductDetails() {
       const hours = businessHours[dayKey];
       
       if (!hours) {
-        setCanBookNow(false);
+        setCanBookNow(true);
         return;
       }
       
@@ -162,7 +162,7 @@ export default function UserProductDetails() {
 
   const getImageByView = (images: any[], viewType: string) => {
     const img = images?.find((i) => i.view_type === viewType);
-    return img ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${img.image_url}` : "";
+    return img ? (img.image_url.startsWith('http') ? img.image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL}${img.image_url}`) : "";
   };
 
   const tryOn = () => {

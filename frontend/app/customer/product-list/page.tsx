@@ -67,7 +67,7 @@ export default function ProductListPage() {
         ...item,
         frameMaterial: item.frame_material,
         frameShape: item.frame_shape,
-        frontImage: frontImage ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${frontImage.image_url}` : "",
+        frontImage: frontImage ? (frontImage.image_url.startsWith('http') ? frontImage.image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL}${frontImage.image_url}`) : "",
         colorName,
         frameSize: frameSize,
         faceShape: item.face_shape ? item.face_shape.split("_") : [],

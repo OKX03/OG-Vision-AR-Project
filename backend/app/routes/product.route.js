@@ -6,14 +6,21 @@ module.exports = app => {
   const products = require("../controllers/product.controller.js");
   const router = require("express").Router();
 
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, 'public/images');
+  const { CloudinaryStorage } = require('multer-storage-cloudinary');
+  const cloudinary = require('cloudinary').v2;
+
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+
+  const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'og_vision_ar/images',
+      allowed_formats: ['jpg', 'png', 'jpeg'],
     },
-    filename: function (req, file, cb) {
-      const uniqueSuffix = Date.now() + '-' + file.fieldname;
-      cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
   });
 
   const upload = multer({ storage: storage });

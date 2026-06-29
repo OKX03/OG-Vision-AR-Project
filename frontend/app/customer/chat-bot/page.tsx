@@ -142,7 +142,7 @@ export default function ChatbotPage() {
                     {p.image_url && (
                       <div className="flex-shrink-0 bg-light rounded d-flex justify-content-center align-items-center" style={{ width: '70px', height: '70px' }}>
                         <img 
-                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${p.image_url}`} 
+                          src={p.image_url.startsWith('http') ? p.image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}${p.image_url}`} 
                           alt={p.model}
                           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                         />

@@ -3,6 +3,16 @@ const ARModel = db.ar_model;
 
 const fs = require("fs");
 const path = require("path");
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  }
+});
 
 exports.uploadModel = async (req, res) => {
   try {
@@ -21,31 +31,29 @@ exports.uploadModel = async (req, res) => {
       where: { product_id }
     });
 
-    const filePath = "/models/" + req.file.filename;
+    const filePath = `${process.env.R2_PUBLIC_URL}/${req.file.key}`;
 
     if (model) {
+      const oldFilePath = model.file_path;
+      await model.update({ file_path: filePath });
 
-      const oldPath = path.resolve(
-        __dirname,
-        "..",
-        "..",
-        "public",
-        model.file_path.replace(/^\/+/, "")
-      );
-
-      await model.update({
-        file_path: filePath
-      });
-
-      if (fs.existsSync(oldPath)) {
+      if (oldFilePath.includes('r2.dev') || oldFilePath.includes(process.env.R2_PUBLIC_URL)) {
+        const oldKey = oldFilePath.split('/').slice(-2).join('/'); // extracts models/filename.glb
         try {
-          fs.unlinkSync(oldPath);
-          console.log("Old model deleted");
-        } catch (fsErr) {
-          console.warn(
-            "Could not delete old model:",
-            fsErr.message
-          );
+          await s3.send(new DeleteObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME || 'og-vision-ar',
+            Key: oldKey
+          }));
+          console.log("Old R2 model deleted");
+        } catch (e) {
+          console.warn("Could not delete old R2 model:", e.message);
+        }
+      } else if (!oldFilePath.includes('cloudinary.com')) {
+        const oldPath = path.resolve(__dirname, "..", "..", "public", oldFilePath.replace(/^\/+/, ""));
+        if (fs.existsSync(oldPath)) {
+          try {
+            fs.unlinkSync(oldPath);
+          } catch (fsErr) {}
         }
       }
 
@@ -93,16 +101,19 @@ exports.deleteModel = async (req, res) => {
       });
     }
 
-    const filePath = path.resolve(
-      __dirname,
-      "..",
-      "..",
-      "public",
-      model.file_path.replace(/^\/+/, "")
-    );
-
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (model.file_path.includes('r2.dev') || model.file_path.includes(process.env.R2_PUBLIC_URL)) {
+      const oldKey = model.file_path.split('/').slice(-2).join('/');
+      try {
+        await s3.send(new DeleteObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME || 'og-vision-ar',
+          Key: oldKey
+        }));
+      } catch (e) {
+        console.warn("Failed to delete from R2:", e.message);
+      }
+    } else if (!model.file_path.includes('cloudinary.com')) {
+      const localFilePath = path.resolve(__dirname, "..", "..", "public", model.file_path.replace(/^\/+/, ""));
+      if (fs.existsSync(localFilePath)) fs.unlinkSync(localFilePath);
     }
 
     await model.destroy();
