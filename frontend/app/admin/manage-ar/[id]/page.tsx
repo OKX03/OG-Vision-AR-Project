@@ -126,7 +126,7 @@ export default function ManageARPage() {
       VtoService.getModelByProductId(id as string).then((model: any) => {
         if (model?.file_path) {
           setProductModel(model);
-          loadModel(`${process.env.NEXT_PUBLIC_API_BASE_URL}${model.file_path}`);
+          loadModel(model.file_path.startsWith('http') ? model.file_path : `${process.env.NEXT_PUBLIC_API_BASE_URL}${model.file_path}`);
         }
       });
     }
@@ -304,7 +304,7 @@ export default function ManageARPage() {
                   </div>
                   <div className="border border-3 rounded-3 overflow-hidden position-relative shadow-sm" style={{ width: "100%", background: "#f8f9fa", borderColor: "#e9ecef" }}>
                     <VirtualTryOnCanvas 
-                      modelPath={`${process.env.NEXT_PUBLIC_API_BASE_URL}${productModel.file_path}`} 
+                      modelPath={productModel.file_path.startsWith('http') ? productModel.file_path : `${process.env.NEXT_PUBLIC_API_BASE_URL}${productModel.file_path}`} 
                       isAdminMode={true}
                       initialCalibration={{
                         pitch: productModel.pitch ?? 0,

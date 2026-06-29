@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     proxyClientMaxBodySize: '50mb',
+    proxyTimeout: 300000,
   },
   async rewrites() {
     const backendUrl = process.env.BACKEND_API_URL;

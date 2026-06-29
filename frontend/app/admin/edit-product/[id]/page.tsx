@@ -91,12 +91,12 @@ export default function EditProductPage() {
 
       if (frontImg) {
         setFrontImage(null);
-        setFrontPreview(`${process.env.NEXT_PUBLIC_API_BASE_URL}${frontImg.image_url}`);
+        setFrontPreview(frontImg.image_url.startsWith('http') ? frontImg.image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL}${frontImg.image_url}`);
       }
 
       if (sideImg) {
         setSideImage(null);
-        setSidePreview(`${process.env.NEXT_PUBLIC_API_BASE_URL}${sideImg.image_url}`);
+        setSidePreview(sideImg.image_url.startsWith('http') ? sideImg.image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL}${sideImg.image_url}`);
       }
 
 

@@ -40,7 +40,7 @@ export default function UserHomePage() {
           color: item.color,
           colorName: colorName,
           frontImage: frontImage
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${frontImage.image_url}`
+            ? (frontImage.image_url.startsWith('http') ? frontImage.image_url : `${process.env.NEXT_PUBLIC_API_BASE_URL}${frontImage.image_url}`)
             : "",
         };
       });

@@ -4,6 +4,19 @@ const ProductImage = db.product_image;
 const ARModel = db.ar_model;
 const fs = require('fs');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
+
+const extractPublicId = (url) => {
+  if (!url || !url.includes('cloudinary.com')) return null;
+  const parts = url.split('/upload/');
+  if (parts.length < 2) return null;
+  let pathParts = parts[1].split('/');
+  if (pathParts[0].startsWith('v')) {
+    pathParts.shift();
+  }
+  const fullPath = pathParts.join('/');
+  return fullPath.substring(0, fullPath.lastIndexOf('.')) || fullPath;
+};
 
 exports.getAllProducts = (req, res) => {
 
@@ -93,14 +106,14 @@ exports.createProduct = async (req, res) => {
     if (req.files?.front_image) {
       images.push({
         product_id: product.product_id,
-        image_url: "/images/" + req.files.front_image[0].filename,
+        image_url: req.files.front_image[0].path,
         view_type: "front"
       });
     }
     if (req.files?.side_image) {
       images.push({
         product_id: product.product_id,
-        image_url: "/images/" + req.files.side_image[0].filename,
+        image_url: req.files.side_image[0].path,
         view_type: "side"
       });
     }
@@ -185,27 +198,33 @@ exports.updateProduct = async (req, res) => {
         });
 
         if (existingImage) {
-          const oldImagePath = path.resolve(
-            __dirname,
-            '..',
-            '..',
-            'public',
-            existingImage.image_url.replace(/^\/+/, '')
-          );
-
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
+          if (existingImage.image_url.includes('cloudinary.com')) {
+            const publicId = extractPublicId(existingImage.image_url);
+            if (publicId) {
+              await cloudinary.uploader.destroy(publicId);
+            }
+          } else {
+            const oldImagePath = path.resolve(
+              __dirname,
+              '..',
+              '..',
+              'public',
+              existingImage.image_url.replace(/^\/+/, '')
+            );
+            if (fs.existsSync(oldImagePath)) {
+              fs.unlinkSync(oldImagePath);
+            }
           }
 
           await ProductImage.update(
-            { image_url: '/images/' + file.filename },
+            { image_url: file.path },
             { where: { image_id: existingImage.image_id } }
           );
 
         } else {
           await ProductImage.create({
             product_id: id,
-            image_url: '/images/' + file.filename,
+            image_url: file.path,
             view_type: viewType
           });
         }
@@ -234,8 +253,13 @@ exports.deleteProduct = async (req, res) => {
 
     if (product.images && product.images.length > 0) {
       for (const img of product.images) {
-        const imagePath = path.resolve(__dirname, '..', '..', 'public', img.image_url.replace(/^\/+/, ''));
-        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+        if (img.image_url.includes('cloudinary.com')) {
+          const publicId = extractPublicId(img.image_url);
+          if (publicId) await cloudinary.uploader.destroy(publicId);
+        } else {
+          const imagePath = path.resolve(__dirname, '..', '..', 'public', img.image_url.replace(/^\/+/, ''));
+          if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+        }
         await ProductImage.destroy({ where: { image_id: img.image_id } });
       }
     }
