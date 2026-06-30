@@ -1,8 +1,14 @@
 const nodemailer = require("nodemailer");
 const User = require("../models").user;
+const dns = require("dns");
+
+// Force Node.js to use IPv4
+dns.setDefaultResultOrder('ipv4first');
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
