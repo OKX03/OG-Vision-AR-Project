@@ -165,9 +165,9 @@ export default function ManageARPage() {
       await VtoService.uploadModel(id as string, selectedFile);
       setSuccessMessage("AR Model Uploaded Successfully!");
       setShowSuccess(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Upload failed");
+      alert("Upload failed: " + (err.response?.data?.message || err.response?.data || err.message));
     } finally {
       setIsUploading(false);
     }

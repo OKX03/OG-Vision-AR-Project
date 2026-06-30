@@ -32,7 +32,15 @@ module.exports = app => {
   router.post(
     "/:product_id",
     [authJwt.verifyToken, authJwt.isAdmin],
-    upload.single("vto_model"),
+    (req, res, next) => {
+      upload.single("vto_model")(req, res, (err) => {
+        if (err) {
+          console.error("Multer/R2 Upload Error:", err);
+          return res.status(400).send({ message: "R2 Upload Error: " + err.message });
+        }
+        next();
+      });
+    },
     vto.uploadModel
   );
 
