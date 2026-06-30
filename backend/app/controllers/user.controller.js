@@ -36,7 +36,7 @@ exports.register = async (req, res) => {
       res.status(201).send({ message: "User was registered successfully! Please check your email to verify your account." });
     } catch (mailErr) {
       console.error("Failed to send verification email:", mailErr);
-      res.status(201).send({ message: "User registered, but failed to send verification email." });
+      res.status(201).send({ message: "Email Error: " + (mailErr.message || "Unknown error") });
     }
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -130,7 +130,7 @@ exports.resendVerificationEmail = async (req, res) => {
     res.status(200).send({ message: "Verification email resent successfully" });
   } catch (err) {
     console.error("Failed to resend verification email:", err);
-    res.status(500).send({ message: "Failed to resend verification email" });
+    res.status(500).send({ message: "Email Error: " + (err.message || "Unknown error") });
   }
 };
 
