@@ -9,7 +9,7 @@ export const VtoService = {
     formData.append("vto_model", file);
     console.log("Form Data", formData.get("vto_model"));
 
-    const directUrl = process.env.BACKEND_API_URL || "http://localhost:8080";
+    const directUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
     const res = await axiosInstance.post(
       `${directUrl}/api${BASE_URL}/${productId}`,
