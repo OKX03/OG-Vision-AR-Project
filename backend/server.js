@@ -13,6 +13,7 @@ var corsOptions = {
   origin: true
 };
 
+app.disable("x-powered-by");
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

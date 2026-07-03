@@ -1,30 +1,32 @@
 const { authJwt } = require("../middleware");
+const multer = require("multer");
+const products = require("../controllers/product.controller.js");
+const router = require("express").Router();
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 
-module.exports = app => {
-  const multer = require("multer");
-  const path = require("path");
-  const products = require("../controllers/product.controller.js");
-  const router = require("express").Router();
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-  const { CloudinaryStorage } = require('multer-storage-cloudinary');
-  const cloudinary = require('cloudinary').v2;
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'og_vision_ar/images',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+  },
+});
 
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
+// FIX: Added 'limits' to prevent massive file uploads (Security Issue)
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit in bytes
+});
 
-  const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-      folder: 'og_vision_ar/images',
-      allowed_formats: ['jpg', 'png', 'jpeg'],
-    },
-  });
-
-  const upload = multer({ storage: storage });
-
+// FIX: Named the arrow function (Maintainability Issue)
+const productRoutes = app => {
   router.get(
     "/",  
     [authJwt.verifyToken], 
@@ -36,7 +38,7 @@ module.exports = app => {
     [authJwt.verifyToken], 
     products.getProductById
   );  
-  
+
   router.post(
     "/",
     upload.fields([
@@ -65,3 +67,5 @@ module.exports = app => {
 
   app.use("/api/products", router);
 };
+
+module.exports = productRoutes;

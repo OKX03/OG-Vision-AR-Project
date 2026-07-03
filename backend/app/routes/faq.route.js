@@ -1,6 +1,6 @@
 const { authJwt } = require("../middleware");
 
-module.exports = app => {
+const faqRoutes = app => {
   const faqs = require("../controllers/faq.controller.js");
   const router = require("express").Router();
 
@@ -21,3 +21,5 @@ module.exports = app => {
 
   app.use("/api/faqs", router);
 };
+
+module.exports = faqRoutes;

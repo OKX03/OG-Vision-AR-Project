@@ -1,7 +1,7 @@
 const { authJwt } = require("../middleware");
 
 
-module.exports = function(app) {
+const userRoutes = function(app) {
   const router = require("express").Router();
   const user = require("../controllers/user.controller");
   
@@ -60,3 +60,5 @@ module.exports = function(app) {
 
   app.use("/api/users", router);
 };
+
+module.exports = userRoutes;

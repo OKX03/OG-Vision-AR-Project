@@ -1,7 +1,7 @@
 const { authJwt } = require("../middleware");
 const chatbotController = require("../controllers/chatbot.controller.js");
 
-module.exports = app => {
+const chatbotRoutes = app => {
   const router = require("express").Router();
 
   // Create a new chat session
@@ -18,3 +18,5 @@ module.exports = app => {
 
   app.use("/api/chatbot", router);
 };
+
+module.exports = chatbotRoutes;
