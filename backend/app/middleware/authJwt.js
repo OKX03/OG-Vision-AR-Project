@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/auth.config.js"); 
 
-verifyToken = (req, res, next) => {
+// FIX: Added const to explicitly declare the function variable (Maintainability Issue)
+const verifyToken = (req, res, next) => {
   let token = req.headers["x-access-token"];
 
   if (!token) {
@@ -25,7 +26,8 @@ verifyToken = (req, res, next) => {
             });
 };
 
-isAdmin = (req, res, next) => {
+// FIX: Added const to explicitly declare the function variable (Maintainability Issue)
+const isAdmin = (req, res, next) => {
   if (req.userRole === "ROLE_ADMIN") {
     next();
   } else {

@@ -8,7 +8,8 @@ const multer = require("multer");
 
 const app = express();
 
-var corsOptions = {
+// FIX: Changed var to const to improve maintainability (Maintainability Issue)
+const corsOptions = {
   credentials: true,
   origin: true
 };

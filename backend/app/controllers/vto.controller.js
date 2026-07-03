@@ -14,6 +14,28 @@ const s3 = new S3Client({
   }
 });
 
+// FIX: Helper function to handle VTO model deletion from R2 or local storage (Maintainability Issue)
+const deleteOldVtoModel = async (oldFilePath) => {
+  if (oldFilePath.includes('r2.dev') || oldFilePath.includes(process.env.R2_PUBLIC_URL)) {
+    const oldKey = oldFilePath.split('/').slice(-2).join('/');
+    try {
+      await s3.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME || 'og-vision-ar', Key: oldKey }));
+    } catch (e) {
+      console.warn("Could not delete old R2 model:", e.message);
+    }
+  } else if (!oldFilePath.includes('cloudinary.com')) {
+    const oldPath = path.resolve(__dirname, "..", "..", "public", oldFilePath.replace(/^\/+/, ""));
+    if (fs.existsSync(oldPath)) {
+      try { 
+        fs.unlinkSync(oldPath); 
+      } 
+      catch (fsErr) {
+        console.warn("Skipped deleting local file (may not exist):", fsErr.message); // FIX
+      }
+    }
+  }
+};
+
 exports.uploadModel = async (req, res) => {
   try {
 
@@ -36,26 +58,7 @@ exports.uploadModel = async (req, res) => {
     if (model) {
       const oldFilePath = model.file_path;
       await model.update({ file_path: filePath });
-
-      if (oldFilePath.includes('r2.dev') || oldFilePath.includes(process.env.R2_PUBLIC_URL)) {
-        const oldKey = oldFilePath.split('/').slice(-2).join('/'); // extracts models/filename.glb
-        try {
-          await s3.send(new DeleteObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME || 'og-vision-ar',
-            Key: oldKey
-          }));
-          console.log("Old R2 model deleted");
-        } catch (e) {
-          console.warn("Could not delete old R2 model:", e.message);
-        }
-      } else if (!oldFilePath.includes('cloudinary.com')) {
-        const oldPath = path.resolve(__dirname, "..", "..", "public", oldFilePath.replace(/^\/+/, ""));
-        if (fs.existsSync(oldPath)) {
-          try {
-            fs.unlinkSync(oldPath);
-          } catch (fsErr) {}
-        }
-      }
+      await deleteOldVtoModel(oldFilePath);
 
       return res.send({
         message: "AR model updated",
@@ -101,21 +104,7 @@ exports.deleteModel = async (req, res) => {
       });
     }
 
-    if (model.file_path.includes('r2.dev') || model.file_path.includes(process.env.R2_PUBLIC_URL)) {
-      const oldKey = model.file_path.split('/').slice(-2).join('/');
-      try {
-        await s3.send(new DeleteObjectCommand({
-          Bucket: process.env.R2_BUCKET_NAME || 'og-vision-ar',
-          Key: oldKey
-        }));
-      } catch (e) {
-        console.warn("Failed to delete from R2:", e.message);
-      }
-    } else if (!model.file_path.includes('cloudinary.com')) {
-      const localFilePath = path.resolve(__dirname, "..", "..", "public", model.file_path.replace(/^\/+/, ""));
-      if (fs.existsSync(localFilePath)) fs.unlinkSync(localFilePath);
-    }
-
+    await deleteOldVtoModel(model.file_path);
     await model.destroy();
 
     return res.send({

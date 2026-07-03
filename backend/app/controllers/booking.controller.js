@@ -4,6 +4,45 @@ const Booking = db.booking;
 const User = db.user;
 const Product = db.product;
 
+// FIX: Helper function to handle inventory updates based on booking status changes (Maintainability Issue)
+const handleInventoryUpdate = async (product_id, oldStatus, newStatus) => {
+  if ((oldStatus === "Accepted" || oldStatus === "Pending") && ["Rejected", "Cancelled", "No Show"].includes(newStatus)) {
+    const product = await Product.findByPk(product_id);
+    if (product) {
+      await product.update({ quantity: product.quantity + 1 });
+    }
+  }
+};
+
+const handleNoShowBans = async (user_id, oldStatus, newStatus) => {
+  if (newStatus === "No Show" && oldStatus !== "No Show") {
+    const noShowCount = await Booking.count({ where: { user_id, status: "No Show" } });
+    if (noShowCount >= 3) {
+      await User.update({ account_status: "Banned" }, { where: { user_id } });
+    }
+  }
+};
+
+const handleBookingEmails = async (bookingId, oldStatus, newStatus, rejectionReason) => {
+  const statusesRequiringEmail = ["Accepted", "Rejected", "Cancelled", "Completed", "No Show"];
+  
+  if (statusesRequiringEmail.includes(newStatus) && oldStatus !== newStatus) {
+    const bookingWithDetails = await Booking.findByPk(bookingId, {
+      include: [{ model: User, as: "user" }, { model: Product, as: "product" }]
+    });
+
+    try {
+      if (newStatus === "Accepted") await mailService.sendBookingAcceptedEmail(bookingWithDetails);
+      else if (newStatus === "Rejected") await mailService.sendBookingRejectedEmail(bookingWithDetails, rejectionReason);
+      else if (newStatus === "Cancelled") await mailService.sendBookingCancelEmail(bookingWithDetails);
+      else if (newStatus === "Completed") await mailService.sendBookingCompletedEmail(bookingWithDetails);
+      else if (newStatus === "No Show") await mailService.sendBookingNoShowEmail(bookingWithDetails);
+    } catch (err) {
+      console.error(`${newStatus} email error:`, err);
+    }
+  }
+};
+
 exports.createBooking = async (req, res) => {
   try {
     const { user_id, product_id, booking_date, time_slot } = req.body;
@@ -101,63 +140,11 @@ exports.updateBooking = async (req, res) => {
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     const oldStatus = booking.status;
-
     await booking.update(data);
 
-    if (
-      oldStatus === "Accepted" || oldStatus === "Pending" &&
-      ["Rejected", "Cancelled", "No Show"].includes(data.status)
-    ) {
-      const product = await Product.findByPk(booking.product_id);
-
-      if (product) {
-        await product.update({
-          quantity: product.quantity + 1
-        });
-      }
-    }
-
-    if (data.status === "No Show" && oldStatus !== "No Show") {
-      const noShowCount = await Booking.count({
-        where: {
-          user_id: booking.user_id,
-          status: "No Show"
-        }
-      });
-      if (noShowCount >= 3) {
-        await User.update(
-          { account_status: "Banned" },
-          { where: { user_id: booking.user_id } }
-        );
-      }
-    }
-
-    const statusesRequiringEmail = ["Accepted", "Rejected", "Cancelled", "Completed", "No Show"];
-    if (statusesRequiringEmail.includes(data.status) && oldStatus !== data.status) {
-      const bookingWithDetails = await Booking.findByPk(id, {
-        include: [
-          { model: User, as: "user" },
-          { model: Product, as: "product" }
-        ]
-      });
-
-      if (data.status === "Accepted") {
-        mailService.sendBookingAcceptedEmail(bookingWithDetails)
-          .catch(err => console.error("Accepted email error:", err));
-      } else if (data.status === "Rejected") {
-        mailService.sendBookingRejectedEmail(bookingWithDetails, data.rejection_reason)
-          .catch(err => console.error("Reject email error:", err));
-      } else if (data.status === "Cancelled") {
-        mailService.sendBookingCancelEmail(bookingWithDetails)
-          .catch(err => console.error("Cancel admin email error:", err));
-      } else if (data.status === "Completed") {
-        mailService.sendBookingCompletedEmail(bookingWithDetails)
-          .catch(err => console.error("Completed email error:", err));
-      } else if (data.status === "No Show") {
-        mailService.sendBookingNoShowEmail(bookingWithDetails)
-          .catch(err => console.error("No show email error:", err));
-      }
-    }
+    await handleInventoryUpdate(booking.product_id, oldStatus, data.status);
+    await handleNoShowBans(booking.user_id, oldStatus, data.status);
+    await handleBookingEmails(id, oldStatus, data.status, data.rejection_reason);
 
     return res.json(booking);
   } catch (err) {
