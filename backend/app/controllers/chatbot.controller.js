@@ -179,14 +179,36 @@ const mapProperty = (value, knownList) => {
     return cleaned ? { [Op.like]: `%${cleaned}%` } : null;
 };
 
+// FIX: Helper function to validate arguments
+const isValidArg = (val) => {
+    if (!val) return false;
+    const str = String(val).toLowerCase().trim();
+    return !['any', 'all', 'none', 'whatever', 'no preference', "doesn't matter", "surprise me", "null", "undefined"].includes(str);
+};
+
+// FIX: Helper function to enrich user preferences (Maintainability Issue)
+const enrichUserPreferences = async (args, reqUserId) => {
+    let targetGenderStr = isValidArg(args.gender) ? String(args.gender).toLowerCase().trim() : "";
+    if ((!isValidArg(args.gender) || !isValidArg(args.face_shape)) && reqUserId && User) {
+        try {
+            const user = await User.findByPk(reqUserId);
+            if (user) {
+                if (!isValidArg(args.gender) && user.gender) {
+                    targetGenderStr = user.gender.toLowerCase();
+                    args.gender = targetGenderStr;
+                }
+                if (!isValidArg(args.face_shape) && user.face_shape) {
+                    args.face_shape = user.face_shape;
+                }
+            }
+        } catch(e) { console.error("Error fetching user profile for chatbot:", e); }
+    }
+    return targetGenderStr;
+};
+
 // FIX: Helper function to build product where clause (Maintainability Issue)
 const buildProductWhereClause = (args) => {
   const whereClause = {};
-  const isValidArg = (val) => {
-      if (!val) return false;
-      const str = String(val).toLowerCase().trim();
-      return !['any', 'all', 'none', 'whatever', 'no preference', "doesn't matter", "surprise me", "null", "undefined"].includes(str);
-  };
 
   if (isValidArg(args.frame_shape)) {
       const shapeMap = mapProperty(args.frame_shape.toLowerCase(), ['round', 'square', 'rectangle', 'wayfarer', 'browline']);
@@ -203,7 +225,7 @@ const buildProductWhereClause = (args) => {
   if (isValidArg(args.frame_size)) whereClause.frame_size = { [Op.like]: `%${args.frame_size}%` };
   if (args.max_price && !isNaN(args.max_price)) whereClause.price = { [Op.lte]: args.max_price };
 
-  return { whereClause, isValidArg };
+  return whereClause;
 };
 
 // FIX: Helper function to parse chat arguments (Maintainability Issue)
@@ -231,21 +253,6 @@ const parseChatbotArgs = (args, message, lastFuncMsg) => {
   return finalArgs;
 };
 
-// FIX: Helper function to enrich user preferences (Maintainability Issue)
-const enrichUserPreferences = async (args, isValidArg, reqUserId) => {
-    let targetGenderStr = isValidArg(args.gender) ? String(args.gender).toLowerCase().trim() : "";
-    if ((!isValidArg(args.gender) || !isValidArg(args.face_shape)) && reqUserId && User) {
-        try {
-            const user = await User.findByPk(reqUserId);
-            if (user) {
-                if (!isValidArg(args.gender) && user.gender) targetGenderStr = user.gender.toLowerCase();
-                if (!isValidArg(args.face_shape) && user.face_shape) args.face_shape = user.face_shape;
-            }
-        } catch(e) { console.error("Error fetching user profile for chatbot:", e); }
-    }
-    return targetGenderStr;
-};
-
 // FIX: Helper function to apply gender filter (Maintainability Issue)
 const applyGenderFilter = (whereClause, targetGenderStr) => {
     if (!targetGenderStr) return;
@@ -256,6 +263,72 @@ const applyGenderFilter = (whereClause, targetGenderStr) => {
     } else {
         whereClause.gender = { [Op.like]: `%${targetGenderStr}%` };
     }
+};
+
+// FIX: Helper function to apply color filter (Hex to RGB logic)
+const applyColorFilter = async (args, whereClause) => {
+    let isColorSearch = false;
+    let isColorFound = false;
+
+    if (isValidArg(args.color)) {
+        isColorSearch = true;
+        const requestedColor = args.color.toLowerCase();
+
+        try {
+            const allProducts = await Product.findAll({ attributes: ['product_id', 'color'] });
+            const matchingIds = [];
+
+            const hexToRgb = (hex) => {
+                if (!hex) return null;
+                hex = hex.replace(/^#/, '');
+                if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+                if (hex.length !== 6) return null;
+                return {
+                    r: parseInt(hex.substring(0, 2), 16),
+                    g: parseInt(hex.substring(2, 4), 16),
+                    b: parseInt(hex.substring(4, 6), 16)
+                };
+            };
+
+            const getColorDistance = (rgb1, rgb2) => {
+                return Math.sqrt(
+                    Math.pow(rgb1.r - rgb2.r, 2) +
+                    Math.pow(rgb1.g - rgb2.g, 2) +
+                    Math.pow(rgb1.b - rgb2.b, 2)
+                );
+            };
+
+            for (const p of allProducts) {
+                if (!p.color) continue;
+                
+                if (p.color.toLowerCase().includes(requestedColor)) {
+                    matchingIds.push(p.product_id);
+                    continue;
+                }
+
+                try {
+                    const names = namer(p.color);
+                    const colorName = names.ntc[0].name.toLowerCase();
+                    const basicName = names.basic[0].name.toLowerCase();
+                    
+                    if (colorName.includes(requestedColor) || basicName.includes(requestedColor) || requestedColor.includes(basicName)) {
+                        matchingIds.push(p.product_id);
+                    }
+                } catch(e) {}
+            }
+
+            if (matchingIds.length > 0) {
+                whereClause.product_id = { [Op.in]: matchingIds };
+                isColorFound = true;
+            } else {
+                whereClause.color = { [Op.like]: `%${args.color}%` };
+            }
+        } catch(e) {
+            whereClause.color = { [Op.like]: `%${args.color}%` };
+        }
+    }
+    
+    return { isColorSearch, isColorFound };
 };
 
 // FIX: Helper function to generate product API response (Maintainability Issue)
@@ -300,19 +373,16 @@ const handleProductRecommendations = async (rawArgs, message, session_id, req, s
   });
   
   const args = parseChatbotArgs(rawArgs, message, lastFuncMsg);
-  const { whereClause, isValidArg } = buildProductWhereClause(args);
   
-  const targetGenderStr = await enrichUserPreferences(args, isValidArg, req.userId);
+  // 1. Enrich User Preferences First
+  const targetGenderStr = await enrichUserPreferences(args, req.userId);
+  
+  // 2. Build Where Clause
+  const whereClause = buildProductWhereClause(args);
+  
+  // 3. Apply Filters
   applyGenderFilter(whereClause, targetGenderStr);
-
-  let isColorSearch = false;
-  let isColorFound = false;
-  
-  if (isValidArg(args.color)) {
-      isColorSearch = true;
-      whereClause.color = { [Op.like]: `%${args.color}%` }; // Simplified for refactor
-      isColorFound = true; 
-  }
+  const { isColorSearch, isColorFound } = await applyColorFilter(args, whereClause);
 
   let totalCount = await Product.count({ where: whereClause });
   let replyText = "";
