@@ -6,6 +6,13 @@ const Booking = db.booking;
 const Product = db.product;
 const mailService = require("../services/mail.service");
 
+// Helper to safely get YYYY-MM-DD in Malaysia Time (GMT+8)
+const getTargetDateStr = (daysToAdd) => {
+    const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kuala_Lumpur" }));
+    d.setDate(d.getDate() + daysToAdd);
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+};
+
 const sendRemindersForDate = async (dateStr) => {
   try {
     console.log("dateSTR is: ", dateStr); 
@@ -78,44 +85,36 @@ const autoRejectForDate = async (dateStr) => {
 const scheduleDailyReminders = () => {
   cron.schedule("0 18 * * 1-5", async () => {
     console.log("Running Reminder Cron (Mon-Fri 18:00)...");
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().split("T")[0];
+    const dateStr = getTargetDateStr(1);
     await sendRemindersForDate(dateStr);
-  });
+  }, { timezone: "Asia/Kuala_Lumpur" });
 };
 
 // Reminder Cron (Sat 17:00) - For Monday
 const scheduleWeekendReminders = () => {
   cron.schedule("0 17 * * 6", async () => {
     console.log("Running Reminder Cron (Sat 17:00)...");
-    const monday = new Date();
-    monday.setDate(monday.getDate() + 2);
-    const dateStr = monday.toISOString().split("T")[0];
+    const dateStr = getTargetDateStr(2);
     await sendRemindersForDate(dateStr);
-  });
+  }, { timezone: "Asia/Kuala_Lumpur" });
 };
 
 // Auto Reject Cron (Mon-Fri 19:00) - For tomorrow
 const scheduleAutoRejectDaily = () => {
   cron.schedule("0 19 * * 1-5", async () => {
     console.log("Running Auto Reject Cron (Mon-Fri 19:00)...");
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().split("T")[0];
+    const dateStr = getTargetDateStr(1);
     await autoRejectForDate(dateStr);
-  });
+  }, { timezone: "Asia/Kuala_Lumpur" });
 };
 
 // Auto Reject Cron (Sat 18:00) - For Monday
 const scheduleAutoRejectWeekend = () => {
   cron.schedule("0 18 * * 6", async () => {
     console.log("Running Auto Reject Cron (Sat 18:00)...");
-    const monday = new Date();
-    monday.setDate(monday.getDate() + 2);
-    const dateStr = monday.toISOString().split("T")[0];
+    const dateStr = getTargetDateStr(2);
     await autoRejectForDate(dateStr);
-  });
+  }, { timezone: "Asia/Kuala_Lumpur" });
 };
 
 const scheduleAutoExpirationCheck = () => {
@@ -159,7 +158,7 @@ const scheduleAutoExpirationCheck = () => {
     } catch (err) {
       console.error("Auto expired cron error:", err);
     }
-  });
+  }, { timezone: "Asia/Kuala_Lumpur" });
 };
 
 // Initialize all cron jobs
