@@ -1,5 +1,12 @@
 # dataset
-face_shape_classifier/
+face_shape_classifier/dataset/
+face_shape_classifier/final_env/
+face_shape_classifier/models/**/*.pt
+face_shape_classifier/models/**/*.h5
+
+# Python cache
+__pycache__/
+*.pyc
 
 # python env
 final_env/
