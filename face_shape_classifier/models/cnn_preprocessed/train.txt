@@ -1,0 +1,118 @@
+(final_env) PS C:\Users\ohxua\Documents\FYP 2 Training\OG Vision AR Project\face_shape_detector> python 1_train_cnn_preprocessed.py        
+2026-05-03 18:35:32.982521: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING:tensorflow:From C:\Users\ohxua\Documents\FYP 2 Training\OG Vision AR Project\face_shape_detector\final_env\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+
+
+=========================================
+Training CNN (MobileNetV2) on PREPROCESSED images...
+Dataset: dataset/preprocessed_split/images
+Epochs: 40 | Batch Size: 32 | Image Size: 224
+=========================================
+
+Setting up data generators...
+Found 3200 images belonging to 5 classes.
+Found 799 images belonging to 5 classes.
+Building model architecture...
+WARNING:tensorflow:From C:\Users\ohxua\Documents\FYP 2 Training\OG Vision AR Project\face_shape_detector\final_env\Lib\site-packages\keras\src\backend.py:1398: The name tf.executing_eagerly_outside_functions is deprecated. Please use tf.compat.v1.executing_eagerly_outside_functions instead.
+
+2026-05-03 18:35:52.126113: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE SSE2 SSE3 SSE4.1 SSE4.2 AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:From C:\Users\ohxua\Documents\FYP 2 Training\OG Vision AR Project\face_shape_detector\final_env\Lib\site-packages\keras\src\layers\normalization\batch_normalization.py:979: The name tf.nn.fused_batch_norm is deprecated. Please use tf.compat.v1.nn.fused_batch_norm instead.
+
+Kicking off training now...
+Epoch 1/40
+WARNING:tensorflow:From C:\Users\ohxua\Documents\FYP 2 Training\OG Vision AR Project\face_shape_detector\final_env\Lib\site-packages\keras\src\utils\tf_utils.py:492: The name tf.ragged.RaggedTensorValue is deprecated. Please use tf.compat.v1.ragged.RaggedTensorValue instead.
+
+WARNING:tensorflow:From C:\Users\ohxua\Documents\FYP 2 Training\OG Vision AR Project\face_shape_detector\final_env\Lib\site-packages\keras\src\engine\base_layer_utils.py:384: The name tf.executing_eagerly_outside_functions is deprecated. Please use tf.compat.v1.executing_eagerly_outside_functions instead.
+
+100/100 [==============================] - 104s 961ms/step - loss: 1.6039 - accuracy: 0.3388 - val_loss: 1.9151 - val_accuracy: 0.2941 - lr: 1.0000e-04
+Epoch 2/40
+100/100 [==============================] - 93s 929ms/step - loss: 1.3205 - accuracy: 0.4897 - val_loss: 1.7306 - val_accuracy: 0.3554 - lr: 1.0000e-04
+Epoch 3/40
+100/100 [==============================] - 92s 924ms/step - loss: 1.1493 - accuracy: 0.6153 - val_loss: 1.4725 - val_accuracy: 0.4293 - lr: 1.0000e-04
+Epoch 4/40
+100/100 [==============================] - 92s 921ms/step - loss: 1.0373 - accuracy: 0.6731 - val_loss: 1.5880 - val_accuracy: 0.4243 - lr: 1.0000e-04
+Epoch 5/40
+100/100 [==============================] - 93s 928ms/step - loss: 0.9447 - accuracy: 0.7228 - val_loss: 1.8053 - val_accuracy: 0.4130 - lr: 1.0000e-04
+Epoch 6/40
+100/100 [==============================] - 92s 915ms/step - loss: 0.8607 - accuracy: 0.7797 - val_loss: 1.4665 - val_accuracy: 0.5232 - lr: 1.0000e-04
+Epoch 7/40
+100/100 [==============================] - 92s 921ms/step - loss: 0.8026 - accuracy: 0.8112 - val_loss: 1.6516 - val_accuracy: 0.4518 - lr: 1.0000e-04
+Epoch 8/40
+100/100 [==============================] - 92s 919ms/step - loss: 0.7628 - accuracy: 0.8378 - val_loss: 1.4248 - val_accuracy: 0.5645 - lr: 1.0000e-04
+Epoch 9/40
+100/100 [==============================] - 92s 921ms/step - loss: 0.7119 - accuracy: 0.8594 - val_loss: 1.6319 - val_accuracy: 0.5031 - lr: 1.0000e-04
+Epoch 10/40
+100/100 [==============================] - 91s 910ms/step - loss: 0.6776 - accuracy: 0.8797 - val_loss: 1.9617 - val_accuracy: 0.4393 - lr: 1.0000e-04
+Epoch 11/40
+100/100 [==============================] - ETA: 0s - loss: 0.6602 - accuracy: 0.8975  
+Epoch 11: ReduceLROnPlateau reducing learning rate to 4.999999873689376e-05.
+100/100 [==============================] - 92s 919ms/step - loss: 0.6602 - accuracy: 0.8975 - val_loss: 2.1161 - val_accuracy: 0.4731 - lr: 1.0000e-04
+Epoch 12/40
+100/100 [==============================] - 95s 954ms/step - loss: 0.6257 - accuracy: 0.9119 - val_loss: 1.8790 - val_accuracy: 0.4881 - lr: 5.0000e-05
+Epoch 13/40
+100/100 [==============================] - 92s 924ms/step - loss: 0.5965 - accuracy: 0.9334 - val_loss: 1.8714 - val_accuracy: 0.4681 - lr: 5.0000e-05
+Epoch 14/40
+100/100 [==============================] - ETA: 0s - loss: 0.5906 - accuracy: 0.9378  
+Epoch 14: ReduceLROnPlateau reducing learning rate to 2.499999936844688e-05.
+100/100 [==============================] - 92s 918ms/step - loss: 0.5906 - accuracy: 0.9378 - val_loss: 1.4788 - val_accuracy: 0.5845 - lr: 5.0000e-05
+Epoch 15/40
+100/100 [==============================] - 93s 927ms/step - loss: 0.5776 - accuracy: 0.9428 - val_loss: 1.3628 - val_accuracy: 0.6045 - lr: 2.5000e-05
+Epoch 16/40
+100/100 [==============================] - 92s 922ms/step - loss: 0.5723 - accuracy: 0.9453 - val_loss: 1.3089 - val_accuracy: 0.6170 - lr: 2.5000e-05
+Epoch 17/40
+100/100 [==============================] - 92s 919ms/step - loss: 0.5663 - accuracy: 0.9528 - val_loss: 1.2871 - val_accuracy: 0.6320 - lr: 2.5000e-05
+Epoch 18/40
+100/100 [==============================] - 92s 919ms/step - loss: 0.5577 - accuracy: 0.9588 - val_loss: 1.1860 - val_accuracy: 0.6583 - lr: 2.5000e-05
+Epoch 19/40
+100/100 [==============================] - 92s 923ms/step - loss: 0.5619 - accuracy: 0.9478 - val_loss: 1.2581 - val_accuracy: 0.6295 - lr: 2.5000e-05
+Epoch 20/40
+100/100 [==============================] - 91s 911ms/step - loss: 0.5490 - accuracy: 0.9572 - val_loss: 1.0961 - val_accuracy: 0.6984 - lr: 2.5000e-05
+Epoch 21/40
+100/100 [==============================] - 92s 920ms/step - loss: 0.5517 - accuracy: 0.9575 - val_loss: 1.1088 - val_accuracy: 0.6959 - lr: 2.5000e-05
+Epoch 22/40
+100/100 [==============================] - 91s 910ms/step - loss: 0.5408 - accuracy: 0.9634 - val_loss: 0.9856 - val_accuracy: 0.7334 - lr: 2.5000e-05
+Epoch 23/40
+100/100 [==============================] - 92s 922ms/step - loss: 0.5347 - accuracy: 0.9709 - val_loss: 1.0318 - val_accuracy: 0.7084 - lr: 2.5000e-05
+Epoch 24/40
+100/100 [==============================] - 91s 913ms/step - loss: 0.5373 - accuracy: 0.9644 - val_loss: 1.0371 - val_accuracy: 0.7209 - lr: 2.5000e-05
+Epoch 25/40
+100/100 [==============================] - 92s 923ms/step - loss: 0.5353 - accuracy: 0.9681 - val_loss: 0.9635 - val_accuracy: 0.7434 - lr: 2.5000e-05
+Epoch 26/40
+100/100 [==============================] - 91s 914ms/step - loss: 0.5397 - accuracy: 0.9619 - val_loss: 0.9672 - val_accuracy: 0.7422 - lr: 2.5000e-05
+Epoch 27/40
+100/100 [==============================] - 93s 926ms/step - loss: 0.5248 - accuracy: 0.9747 - val_loss: 0.9432 - val_accuracy: 0.7384 - lr: 2.5000e-05
+Epoch 28/40
+100/100 [==============================] - 92s 918ms/step - loss: 0.5249 - accuracy: 0.9728 - val_loss: 0.9379 - val_accuracy: 0.7584 - lr: 2.5000e-05
+Epoch 29/40
+100/100 [==============================] - 92s 921ms/step - loss: 0.5201 - accuracy: 0.9737 - val_loss: 0.9134 - val_accuracy: 0.7785 - lr: 2.5000e-05
+Epoch 30/40
+100/100 [==============================] - 91s 912ms/step - loss: 0.5202 - accuracy: 0.9734 - val_loss: 0.9468 - val_accuracy: 0.7559 - lr: 2.5000e-05
+Epoch 31/40
+100/100 [==============================] - 93s 927ms/step - loss: 0.5195 - accuracy: 0.9728 - val_loss: 0.9014 - val_accuracy: 0.7685 - lr: 2.5000e-05
+Epoch 32/40
+100/100 [==============================] - 91s 914ms/step - loss: 0.5114 - accuracy: 0.9806 - val_loss: 0.9258 - val_accuracy: 0.7597 - lr: 2.5000e-05
+Epoch 33/40
+100/100 [==============================] - 93s 925ms/step - loss: 0.5166 - accuracy: 0.9778 - val_loss: 0.9151 - val_accuracy: 0.7722 - lr: 2.5000e-05
+Epoch 34/40
+100/100 [==============================] - ETA: 0s - loss: 0.5142 - accuracy: 0.9769  
+Epoch 34: ReduceLROnPlateau reducing learning rate to 1.249999968422344e-05.
+100/100 [==============================] - 91s 913ms/step - loss: 0.5142 - accuracy: 0.9769 - val_loss: 0.9245 - val_accuracy: 0.7785 - lr: 2.5000e-05
+Epoch 35/40
+100/100 [==============================] - 92s 923ms/step - loss: 0.5075 - accuracy: 0.9806 - val_loss: 0.9145 - val_accuracy: 0.7735 - lr: 1.2500e-05
+Epoch 36/40
+100/100 [==============================] - 91s 914ms/step - loss: 0.5060 - accuracy: 0.9794 - val_loss: 0.8937 - val_accuracy: 0.7785 - lr: 1.2500e-05
+Epoch 37/40
+100/100 [==============================] - 92s 922ms/step - loss: 0.5024 - accuracy: 0.9834 - val_loss: 0.8935 - val_accuracy: 0.7785 - lr: 1.2500e-05
+Epoch 38/40
+100/100 [==============================] - 91s 913ms/step - loss: 0.5082 - accuracy: 0.9806 - val_loss: 0.9220 - val_accuracy: 0.7697 - lr: 1.2500e-05
+Epoch 39/40
+100/100 [==============================] - 92s 917ms/step - loss: 0.5029 - accuracy: 0.9825 - val_loss: 0.9071 - val_accuracy: 0.7772 - lr: 1.2500e-05
+Epoch 40/40
+100/100 [==============================] - ETA: 0s - loss: 0.4979 - accuracy: 0.9847  
+Epoch 40: ReduceLROnPlateau reducing learning rate to 6.24999984211172e-06.
+100/100 [==============================] - 91s 914ms/step - loss: 0.4979 - accuracy: 0.9847 - val_loss: 0.8970 - val_accuracy: 0.7760 - lr: 1.2500e-05
+
+Awesome! Model saved to models/cnn_preprocessed\best_cnn_preprocessed.keras
+Generating learning curve plot...
+Plot saved to models/cnn_preprocessed\learning_curve.png
