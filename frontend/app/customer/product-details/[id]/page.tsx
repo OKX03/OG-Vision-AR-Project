@@ -74,12 +74,11 @@ export default function UserProductDetails() {
   useEffect(() => {
     const checkStoreStatus = () => {
       const now = new Date();
-      now.setHours(17, 1, 0, 0);  
       const dayKey = now.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
       const hours = businessHours[dayKey];
       
       if (!hours) {
-        setCanBookNow(true);
+        setCanBookNow(false);
         return;
       }
       
@@ -91,12 +90,13 @@ export default function UserProductDetails() {
       const openTotalMinutes = openH * 60 + openM;
       
       const [closeH, closeM] = hours.close.split(":").map(Number);
+      // Stop accepting new bookings 1 hour before closing time
       const cutoffTotalMinutes = (closeH - 1) * 60 + closeM;
       
       if (currentTotalMinutes >= openTotalMinutes && currentTotalMinutes < cutoffTotalMinutes) {
         setCanBookNow(true);
       } else {
-        setCanBookNow(true);
+        setCanBookNow(false);
       }
     };
 
