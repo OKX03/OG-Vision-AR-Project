@@ -19,6 +19,7 @@ const extractPublicId = (url) => {
 };
 
 // FIX: Helper function to handle image deletion from Cloudinary or local storage (Maintainability Issue)
+// Helper function to delete an old product image file from cloud storage (Cloudinary).
 const deleteOldImageFile = async (imageUrl) => {
   if (!imageUrl) return;
   
@@ -31,6 +32,7 @@ const deleteOldImageFile = async (imageUrl) => {
   }
 };
 
+// Helper function to process and upload updated product images.
 const processUpdatedImages = async (reqFiles, productId) => {
   if (!reqFiles) return;
   const viewTypeMap = { front_image: 'front', side_image: 'side' };
@@ -57,6 +59,7 @@ const processUpdatedImages = async (reqFiles, productId) => {
   }
 };
 
+// Controller action to retrieve all products.
 exports.getAllProducts = (req, res) => {
 
   Product.findAll({
@@ -83,6 +86,7 @@ exports.getAllProducts = (req, res) => {
 
 };
 
+// Controller action to retrieve a single product by its ID.
 exports.getProductById = (req, res) => {
   const id = req.params.id;
 
@@ -113,6 +117,7 @@ exports.getProductById = (req, res) => {
     });
 };
 
+// Controller action to create and save a new product.
 exports.createProduct = async (req, res) => {
   try {
     console.log("Received product:", req.body);
@@ -179,6 +184,7 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+// Controller action to update an existing product by its ID.
 exports.updateProduct = async (req, res) => {
   const id = req.params.id;
   try {
@@ -216,6 +222,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+// Controller action to delete a product by its ID.
 exports.deleteProduct = async (req, res) => {
   const id = req.params.id;
 

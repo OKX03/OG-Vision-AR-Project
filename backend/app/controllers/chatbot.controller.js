@@ -26,11 +26,13 @@ const baseColors = {
   tortoise: [150, 75, 0], light: [220, 220, 220]
 };
 
+// Helper function to convert a hex color string to its RGB equivalent.
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : null;
 }
 
+// Helper function to calculate the Euclidean distance between two RGB colors.
 function getColorDistance(rgb1, rgb2) {
   return Math.sqrt(
     Math.pow(rgb1[0] - rgb2[0], 2) + Math.pow(rgb1[1] - rgb2[1], 2) + Math.pow(rgb1[2] - rgb2[2], 2)
@@ -135,6 +137,7 @@ const summaryModel = genAI.getGenerativeModel({
   model: "gemini-2.5-flash"
 });
 
+// Controller action to create a new chat session for a user.
 exports.createSession = async (req, res) => {
   try {
     const user_id = req.userId;
@@ -174,6 +177,7 @@ exports.createSession = async (req, res) => {
   }
 };
 
+// Controller action to retrieve the chat history for a specific session.
 exports.getSessionHistory = async (req, res) => {
   try {
     const { session_id } = req.params;
@@ -187,6 +191,7 @@ exports.getSessionHistory = async (req, res) => {
   }
 };
 
+// Controller action to handle sending a new user message to the chatbot.
 exports.sendMessage = async (req, res) => {
   try {
     const { session_id, message } = req.body;
@@ -652,6 +657,7 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
+// Controller action to end an active chat session.
 exports.endSession = async (req, res) => {
   try {
     const { session_id } = req.params;

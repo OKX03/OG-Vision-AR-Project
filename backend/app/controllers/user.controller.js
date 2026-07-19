@@ -11,6 +11,7 @@ const jwt = require("jsonwebtoken");
 const resetTokens = {};
 const verificationTokens = {};
 
+// Controller action to register a new user.
 exports.register = async (req, res) => {
   try {
     const userByUsername = await User.findOne({ where: { username: req.body.username } });
@@ -43,6 +44,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// Controller action to authenticate a user and generate a JWT token.
 exports.login = (req, res) => {
   User.findOne({
     where: {
@@ -81,10 +83,12 @@ exports.login = (req, res) => {
     .catch(err => res.status(500).send({ message: err.message }));
 };
 
+// Controller action to logout a user.
 exports.logout = (req, res) => {
   res.status(200).send({ message: "You have been signed out!" });
 };
 
+// Controller action to verify a user's email address using a token.
 exports.verifyEmail = async (req, res) => {
   const { email, token } = req.query;
   if (!email || !token) return res.status(400).send({ message: "Missing parameters" });
@@ -104,6 +108,7 @@ exports.verifyEmail = async (req, res) => {
   res.status(200).send({ message: "Email verified successfully" });
 };
 
+// Controller action to resend the email verification link to a user.
 exports.resendVerificationEmail = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).send({ message: "Email or username is required" });
@@ -134,6 +139,7 @@ exports.resendVerificationEmail = async (req, res) => {
   }
 };
 
+// Controller action to initiate the password recovery process.
 exports.recoverPassword = async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ where: { email } });
@@ -150,6 +156,7 @@ exports.recoverPassword = async (req, res) => {
   }
 };
 
+// Controller action to reset a user's password using a valid token.
 exports.resetPassword = async (req, res) => {
   const { email, token, password } = req.body;
   if (!email || !token || !password) return res.status(400).send({ message: "Missing parameters" });
@@ -169,6 +176,7 @@ exports.resetPassword = async (req, res) => {
   res.status(200).send({ message: "Password has been reset successfully" });
 };
 
+// Controller action to retrieve the authenticated user's profile information.
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.userId, {
@@ -181,6 +189,7 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+// Controller action to update the authenticated user's profile information.
 exports.updateProfile = async (req, res) => {
   try {
     const { username, gender, face_shape, phone_number } = req.body;
@@ -212,6 +221,7 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// Controller action to fetch a user's account status.
 exports.getUserStatus = async (req, res) => {
   try {
     const user = await User.findByPk(req.userId, { attributes: ["account_status"] });

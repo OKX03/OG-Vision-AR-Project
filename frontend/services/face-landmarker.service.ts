@@ -15,6 +15,7 @@ export class FaceLandmarkerService {
   private initPromise: Promise<void> | null = null;
   private lastVideoTime = -1;
 
+  // Initializes the MediaPipe FaceLandmarker task.
   async init(mode: "VIDEO" | "IMAGE" = "VIDEO"): Promise<void> {
     // Prevent reinitialization
     if (this.ready && this.mode === mode) return;
@@ -54,10 +55,12 @@ export class FaceLandmarkerService {
     await this.initPromise;
   }
 
+  // Checks if the landmarker is fully initialized and ready to process frames.
   isReady() {
     return this.ready;
   }
 
+  // Processes a single video frame to detect face landmarks.
   detectForVideo(video: HTMLVideoElement, timestamp: number) {
     if (!this.faceLandmarker || this.mode !== "VIDEO") {
       return null;
@@ -90,6 +93,7 @@ export class FaceLandmarkerService {
     }
   }
 
+  // Processes a static image to detect face landmarks.
   async detectImage(image: HTMLImageElement | ImageBitmap | HTMLCanvasElement) {
     if (!this.faceLandmarker || this.mode !== "IMAGE") {
       return null;
@@ -113,6 +117,7 @@ export class FaceLandmarkerService {
     }
   }
 
+  // Closes the FaceLandmarker instance and releases its resources.
   close() {
     if (this.faceLandmarker) {
       this.faceLandmarker.close();

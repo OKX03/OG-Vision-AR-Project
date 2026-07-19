@@ -3,6 +3,7 @@ import axiosInstance from "@/services/axios-instance";
 const BASE_URL = '/vto';
 
 export const VtoService = {
+  // Uploads a 3D model (.glb, .gltf, .fbx) for Virtual Try-On mapping.
   uploadModel: async (productId: string, file: File) => {
     console.log("Uploading model to backend!!");
     const formData = new FormData();
@@ -22,16 +23,19 @@ export const VtoService = {
     return res.data;
   },
 
+  // Deletes a Virtual Try-On 3D model associated with a specific product.
   deleteModel: async (productId: string) => {
     const res = await axiosInstance.delete(`${BASE_URL}/${productId}`);
     return res.data;
   },
 
+  // Fetches the Virtual Try-On 3D model details for a specific product.
   getModelByProductId: async (productId: string) => {
     const res = await axiosInstance.get(`${BASE_URL}/${productId}`);
     return res.data;
   },
 
+  // Saves calibration data (position, scale, rotation) for a product's Virtual Try-On model.
   saveCalibration: async (productId: string, calibrationData: any) => {
     const res = await axiosInstance.put(`${BASE_URL}/${productId}/calibration`, calibrationData);
     return res.data;

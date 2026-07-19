@@ -2,7 +2,7 @@ const db = require("../models");
 const FAQ = db.faq;
 const Op = db.Sequelize.Op;
 
-// Create and Save a new FAQ
+// Controller action to create and save a new FAQ.
 exports.createFAQ = async (req, res) => {
   try {
     // Validate request
@@ -27,7 +27,7 @@ exports.createFAQ = async (req, res) => {
   }
 };
 
-// Retrieve all FAQs from the database.
+// Controller action to retrieve all FAQs from the database.
 exports.getAllFAQs = async (req, res) => {
   try {
     const data = await FAQ.findAll({
@@ -41,7 +41,7 @@ exports.getAllFAQs = async (req, res) => {
   }
 };
 
-// Find a single FAQ with an id
+// Controller action to find a single FAQ by its ID.
 exports.getFAQById = async (req, res) => {
   try {
     const id = req.params.id;
@@ -61,7 +61,7 @@ exports.getFAQById = async (req, res) => {
   }
 };
 
-// Update a FAQ by the id in the request
+// Controller action to update an existing FAQ by its ID.
 exports.updateFAQ = async (req, res) => {
   try {
     const id = req.params.id;
@@ -93,7 +93,7 @@ exports.updateFAQ = async (req, res) => {
   }
 };
 
-// Delete a FAQ with the specified id in the request
+// Controller action to delete a FAQ by its ID.
 exports.deleteFAQ = async (req, res) => {
   try {
     const id = req.params.id;

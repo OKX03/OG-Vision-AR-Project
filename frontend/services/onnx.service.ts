@@ -30,6 +30,7 @@ class OnnxFaceShapeService {
     return this.sessionPromise;
   }
 
+  // Retrieves the active ONNX InferenceSession.
   public async getSession(): Promise<any | null> {
     if (!this.sessionPromise) {
       this.init();

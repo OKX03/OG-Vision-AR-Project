@@ -9,6 +9,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Helper function to retrieve a list of all administrator email addresses.
 const getAdminEmails = async () => {
   const admins = await User.findAll({
     where: { role: "ROLE_ADMIN" }
@@ -16,6 +17,7 @@ const getAdminEmails = async () => {
   return admins.map(a => a.email);
 };
 
+// Helper function to format a Date object or string into a human-readable string.
 const formatDateWithDay = (dateInput) => {
   if (!dateInput) return "Unknown Date";
   const dateStr = typeof dateInput === "string" ? dateInput.split("T")[0] : dateInput.toISOString().split("T")[0];
@@ -28,6 +30,7 @@ const formatDateWithDay = (dateInput) => {
   return `${dateStr} (${dayName})`;
 };
 
+// Sends a password reset email to a user.
 exports.sendResetEmail = async (email, token) => {
   const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
@@ -43,6 +46,7 @@ exports.sendResetEmail = async (email, token) => {
   });
 };
 
+// Sends an email verification link to a newly registered user.
 exports.sendVerificationEmail = async (email, token) => {
   const verifyLink = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
 
@@ -58,6 +62,7 @@ exports.sendVerificationEmail = async (email, token) => {
   });
 };
 
+// Sends a notification email to all administrators when a new booking is created.
 exports.sendNewBookingEmail = async (booking) => {
   const adminEmails = await getAdminEmails();
 
@@ -84,6 +89,7 @@ exports.sendNewBookingEmail = async (booking) => {
   });
 };
 
+// Sends a reminder email to administrators about a pending booking scheduled for tomorrow.
 exports.sendBookingReminderEmail = async (booking) => {
   const adminEmails = await getAdminEmails();
   const formattedDate = formatDateWithDay(booking.booking_date);
@@ -107,6 +113,7 @@ exports.sendBookingReminderEmail = async (booking) => {
   });
 };
 
+// Sends an email to a user notifying them that their booking has been accepted by an admin.
 exports.sendBookingAcceptedEmail = async (booking) => {
   const formattedDate = formatDateWithDay(booking.booking_date);
   const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
@@ -127,6 +134,7 @@ exports.sendBookingAcceptedEmail = async (booking) => {
   });
 };
 
+// Sends an email to a user notifying them that their booking has been rejected by an admin.
 exports.sendBookingRejectedEmail = async (booking, reason) => {
   const formattedDate = formatDateWithDay(booking.booking_date);
   const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
@@ -147,6 +155,7 @@ exports.sendBookingRejectedEmail = async (booking, reason) => {
   });
 };
 
+// Sends a notification email to all administrators when a user cancels their booking.
 exports.sendBookingCancelEmail = async (booking) => {
   const adminEmails = await getAdminEmails();
   const formattedDate = formatDateWithDay(booking.booking_date);
@@ -170,6 +179,7 @@ exports.sendBookingCancelEmail = async (booking) => {
   });
 };
 
+// Sends a follow-up email to a user after their booking has been marked as completed.
 exports.sendBookingCompletedEmail = async (booking) => {
   const formattedDate = formatDateWithDay(booking.booking_date);
   const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;
@@ -190,6 +200,7 @@ exports.sendBookingCompletedEmail = async (booking) => {
   });
 };
 
+// Sends an email to a user notifying them that they were marked as a no-show for their booking.
 exports.sendBookingNoShowEmail = async (booking) => {
   const formattedDate = formatDateWithDay(booking.booking_date);
   const productInfo = booking.product && booking.product.brand ? `${booking.product.brand} - ${booking.product.model}` : booking.product_id;

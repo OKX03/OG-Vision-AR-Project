@@ -5,6 +5,7 @@ const User = db.user;
 const Product = db.product;
 
 // FIX: Helper function to handle inventory updates based on booking status changes (Maintainability Issue)
+// Helper function to handle inventory updates based on booking status changes.
 const handleInventoryUpdate = async (product_id, oldStatus, newStatus) => {
   if ((oldStatus === "Accepted" || oldStatus === "Pending") && ["Rejected", "Cancelled", "No Show"].includes(newStatus)) {
     const product = await Product.findByPk(product_id);
@@ -14,6 +15,7 @@ const handleInventoryUpdate = async (product_id, oldStatus, newStatus) => {
   }
 };
 
+// Helper function to handle automatic user bans for repeated no-shows.
 const handleNoShowBans = async (user_id, oldStatus, newStatus) => {
   if (newStatus === "No Show" && oldStatus !== "No Show") {
     const noShowCount = await Booking.count({ where: { user_id, status: "No Show" } });
@@ -23,6 +25,7 @@ const handleNoShowBans = async (user_id, oldStatus, newStatus) => {
   }
 };
 
+// Helper function to trigger email notifications based on booking status changes.
 const handleBookingEmails = async (bookingId, oldStatus, newStatus, rejectionReason) => {
   const statusesRequiringEmail = ["Accepted", "Rejected", "Cancelled", "Completed", "No Show"];
   
@@ -43,6 +46,7 @@ const handleBookingEmails = async (bookingId, oldStatus, newStatus, rejectionRea
   }
 };
 
+// Controller action to create and save a new booking.
 exports.createBooking = async (req, res) => {
   try {
     const { user_id, product_id, booking_date, time_slot } = req.body;
@@ -80,6 +84,7 @@ exports.createBooking = async (req, res) => {
   }
 };
 
+// Controller action to retrieve all bookings from the database.
 exports.getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.findAll({
@@ -96,6 +101,7 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
+// Controller action to find a single booking by its ID.
 exports.getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -113,6 +119,7 @@ exports.getBookingById = async (req, res) => {
   }
 };
 
+// Controller action to retrieve all bookings associated with a specific user.
 exports.getBookingsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -131,6 +138,7 @@ exports.getBookingsByUserId = async (req, res) => {
   }
 };
 
+// Controller action to update a booking's status.
 exports.updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -153,6 +161,7 @@ exports.updateBooking = async (req, res) => {
   }
 };
 
+// Controller action to delete a booking by its ID.
 exports.deleteBooking = async (req, res) => {
   try {
     const { id } = req.params;

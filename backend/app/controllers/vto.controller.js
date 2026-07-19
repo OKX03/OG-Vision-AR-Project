@@ -15,6 +15,7 @@ const s3 = new S3Client({
 });
 
 // FIX: Helper function to handle VTO model deletion from R2 or local storage (Maintainability Issue)
+// Helper function to delete an old AR model file from cloud storage (Cloudflare R2).
 const deleteOldVtoModel = async (oldFilePath) => {
   if (oldFilePath.includes('r2.dev') || oldFilePath.includes(process.env.R2_PUBLIC_URL)) {
     const oldKey = oldFilePath.split('/').slice(-2).join('/');
@@ -36,6 +37,7 @@ const deleteOldVtoModel = async (oldFilePath) => {
   }
 };
 
+// Controller action to handle uploading a new 3D AR model for a product.
 exports.uploadModel = async (req, res) => {
   try {
 
@@ -89,6 +91,7 @@ exports.uploadModel = async (req, res) => {
   }
 };
 
+// Controller action to delete an AR model.
 exports.deleteModel = async (req, res) => {
   try {
 
@@ -122,6 +125,7 @@ exports.deleteModel = async (req, res) => {
   }
 };
 
+// Controller action to retrieve AR model details for a specific product.
 exports.getModelByProductId = async (req, res) => {
   try {
 
@@ -150,6 +154,7 @@ exports.getModelByProductId = async (req, res) => {
   }
 };
 
+// Controller action to save calibration settings for an AR model.
 exports.saveCalibration = async (req, res) => {
   try {
 

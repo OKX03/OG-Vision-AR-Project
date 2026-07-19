@@ -17,21 +17,25 @@ interface DecodedToken {
 
 export const userService = {
 
+  // Retrieves the current user's authentication token from local storage.
   getToken(): string | null {
     const user = storageService.getUser();
     return user?.accessToken || null;
   },
 
+  // Retrieves the current user's role from local storage.
   getRole(): string | null {
     const user = storageService.getUser();
     return user?.roles || null;
   },
 
+  // Checks whether the current user has a specific role.
   hasRole(role: string): boolean {
     const userRole = this.getRole();
     return userRole === role;
   },
 
+  // Checks if a valid, unexpired token exists in local storage.
   hasValidToken(): boolean {
     const token = this.getToken();
     if (!token) return false;
@@ -45,6 +49,7 @@ export const userService = {
     }
   },
 
+  // Authenticates a user with the given credentials.
   async login(username: string, password: string) {
     const res = await authAxios.post("login", {
       username,
@@ -61,6 +66,7 @@ export const userService = {
     return data;
   },
 
+  // Registers a new user account.
   async register(username: string, email: string, password: string, gender: string) {
     console.log("Registering user:", { username, email, password, gender });
     const res = await authAxios.post("register", {
@@ -74,16 +80,19 @@ export const userService = {
     return res.data;
   },
 
+  // Verifies the user's email using a token sent to their inbox.
   async verifyEmail(email: string, token: string) {
     const res = await authAxios.get(`verify-email?email=${encodeURIComponent(email)}&token=${token}`);
     return res.data;
   },
 
+  // Requests a new email verification link.
   async resendVerificationEmail(email: string) {
     const res = await authAxios.post("resend-verification", { email });
     return res.data;
   },
 
+  // Logs out the current user, clearing local session data and ending any active chatbot sessions.
   async logout() {
     this.clearLogoutTimer();
 
@@ -114,11 +123,13 @@ export const userService = {
     }
   },
 
+  // Requests a password recovery email.
   async recoverPassword(email: string) {
     const res = await authAxios.post("recover-password", { email });
     return res.data;
   },
 
+  // Resets the user's password using a valid recovery token.
   async resetPassword(email: string, token: string, password: string) {
     try {
       const res = await authAxios.post("reset-password", {
@@ -134,18 +145,22 @@ export const userService = {
     }
   },
 
+  // Fetches the profile data for the currently authenticated user.
   getProfile() {
     return axiosInstance.get(`${BASE_URL}/profile`);
   },
 
+  // Updates the profile information of the currently authenticated user.
   updateProfile(username: string, gender: string, phone_number: string, face_shape?: string) {
     return axiosInstance.put(`${BASE_URL}/profile`, { username, gender, phone_number, face_shape });
   },
 
+  // Fetches the current account status for the authenticated user.
   getUserStatus() {
     return axiosInstance.get(`${BASE_URL}/status`);
   },
 
+  // Calculates the time remaining on the user's JWT token and sets an automatic logout timer.
   setAutoLogout() {
     const token = this.getToken();
     if (!token) return;
@@ -173,6 +188,7 @@ export const userService = {
     }
   },
 
+  // Clears any active automatic logout timer.
   clearLogoutTimer() {
     console.log("Clearing logout timer");
     if (logoutTimer) {
